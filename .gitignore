@@ -9,3 +9,5 @@ __pycache__
 *.pyo
 .cyberrange/backups/
 .vercel
+
+.vercel
