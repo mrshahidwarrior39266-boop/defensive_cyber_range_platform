@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  cyber-range-orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cyber_range_orchestrator
+    environment:
+      - CYBER_RANGE_ISOLATED=1
+      - ALLOWED_TARGETS=localhost,127.0.0.1,mock-enterprise
+      - HUMAN_APPROVAL_MODE=auto_low_risk
+    volumes:
+      - ./simulation_artifacts:/app/simulation_artifacts
+    networks:
+      - isolated_range_net
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: cyber_range_prometheus
+    volumes:
+      - ./infra/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    networks:
+      - isolated_range_net
+
+networks:
+  isolated_range_net:
+    driver: bridge
+    internal: true

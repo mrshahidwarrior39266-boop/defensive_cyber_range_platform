@@ -1,0 +1,10 @@
+# TYPE http_requests_total counter
+http_requests_total{service="acme-enterprise-portal"} 0
+# TYPE patches_deployed_total counter
+patches_deployed_total{service="acme-enterprise-portal"} 4
+# TYPE patches_rolled_back_total counter
+patches_rolled_back_total{service="acme-enterprise-portal"} 0
+# TYPE security_alerts_triggered_total counter
+security_alerts_triggered_total{service="acme-enterprise-portal"} 4
+# TYPE security_findings_detected_total counter
+security_findings_detected_total{service="acme-enterprise-portal"} 4

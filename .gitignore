@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-ssr
+*.local
+.env
+.DS_Store
+__pycache__
+*.pyc
+*.pyo
+.cyberrange/backups/
+.vercel

@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: "cyber_range_orchestrator"
+    static_configs:
+      - targets: ["cyber-range-orchestrator:9100"]

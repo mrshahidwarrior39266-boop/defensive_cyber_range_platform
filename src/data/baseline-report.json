@@ -1,0 +1,582 @@
+{
+  "platform": "Defensive Cyber Range Simulation Platform",
+  "total_rounds": 2,
+  "final_posture_score": 100.0,
+  "remediated_cwes": [
+    "CWE-489",
+    "CWE-79",
+    "CWE-862",
+    "CWE-89"
+  ],
+  "audit_chain_valid": true,
+  "audit_entries_count": 42,
+  "rounds": [
+    {
+      "round": 1,
+      "analysis_report": {
+        "round": 1,
+        "mapped_endpoints": [
+          {
+            "file_path": "mock_enterprise/service.py",
+            "function_name": "get_health",
+            "endpoint": "/api/v1/health",
+            "parameters": [],
+            "has_auth_guard": false,
+            "line_number": 25
+          },
+          {
+            "file_path": "mock_enterprise/service.py",
+            "function_name": "search_directory",
+            "endpoint": "/api/v1/users/search",
+            "parameters": [
+              "username_query",
+              "actor"
+            ],
+            "has_auth_guard": false,
+            "line_number": 36
+          },
+          {
+            "file_path": "mock_enterprise/service.py",
+            "function_name": "render_search_banner",
+            "endpoint": "/ui/search-banner",
+            "parameters": [
+              "filter_label",
+              "actor"
+            ],
+            "has_auth_guard": false,
+            "line_number": 42
+          },
+          {
+            "file_path": "mock_enterprise/service.py",
+            "function_name": "export_confidential_documents",
+            "endpoint": "/api/v1/admin/export-confidential",
+            "parameters": [
+              "requester_role",
+              "actor"
+            ],
+            "has_auth_guard": false,
+            "line_number": 51
+          }
+        ],
+        "findings_count": 4,
+        "findings": [
+          {
+            "finding_id": "FIND-CWE-89",
+            "vuln_id": "VULN-001",
+            "cwe_id": "CWE-89",
+            "title": "Unparameterized SQL Query in User Directory Lookup",
+            "severity": "CRITICAL",
+            "cvss_score": 9.8,
+            "file_path": "mock_enterprise/database.py",
+            "function_name": "lookup_user_by_username",
+            "endpoint": "/api/v1/users/search",
+            "line_number": 61,
+            "evidence_snippet": "query = f\"SELECT id, username, email, role, department FROM users WHERE username = '{username}'\"",
+            "description": "SQL query string is constructed dynamically using a Python f-string (`ast.JoinedStr`) with user input `username` rather than DB-API parameterized `?` placeholders.",
+            "remediation_guidance": "Use parameterized SQL execution: cursor.execute(\"SELECT ... WHERE username = ?\", (username,))",
+            "detected_at_ms": 1793242940024.66
+          },
+          {
+            "finding_id": "FIND-CWE-862",
+            "vuln_id": "VULN-002",
+            "cwe_id": "CWE-862",
+            "title": "Missing Role Authorization in Confidential Document Export",
+            "severity": "HIGH",
+            "cvss_score": 8.6,
+            "file_path": "mock_enterprise/service.py",
+            "function_name": "export_confidential_documents",
+            "endpoint": "/api/v1/admin/export-confidential",
+            "line_number": 51,
+            "evidence_snippet": "def export_confidential_documents(self, requester_role: str, ...):",
+            "description": "Administrative export method accepts `requester_role` but never validates that the caller holds the `'admin'` role before querying confidential records.",
+            "remediation_guidance": "Enforce an explicit authorization guard at the start of the method and raise PermissionError or return HTTP 403 when `requester_role != 'admin'`.",
+            "detected_at_ms": 1793242940025.66
+          },
+          {
+            "finding_id": "FIND-CWE-79",
+            "vuln_id": "VULN-003",
+            "cwe_id": "CWE-79",
+            "title": "Unescaped HTML Output in Directory Search Banner",
+            "severity": "MEDIUM",
+            "cvss_score": 6.5,
+            "file_path": "mock_enterprise/service.py",
+            "function_name": "render_search_banner",
+            "endpoint": "/ui/search-banner",
+            "line_number": 42,
+            "evidence_snippet": "return f\"<div class='search-banner'>Active Directory Filter: {filter_label}</div>\"",
+            "description": "`render_search_banner` interpolates `filter_label` directly into an HTML `<div>` element without calling `html.escape()`.",
+            "remediation_guidance": "Escape untrusted input with `safe_label = html.escape(filter_label, quote=True)` before rendering inside HTML markup.",
+            "detected_at_ms": 1793242940026.66
+          },
+          {
+            "finding_id": "FIND-CWE-489",
+            "vuln_id": "VULN-004",
+            "cwe_id": "CWE-489",
+            "title": "Production Debug Mode, Verbose Stack Traces, and Static Secret Mode Enabled",
+            "severity": "MEDIUM",
+            "cvss_score": 6.1,
+            "file_path": "mock_enterprise/config.py",
+            "function_name": "module_config",
+            "endpoint": "/api/v1/health",
+            "line_number": 12,
+            "evidence_snippet": "DEBUG_MODE = True / EXPOSE_STACK_TRACES = True / TOKEN_SIGNING_MODE = 'weak_static_secret'",
+            "description": "Production configuration enables active debug flags, stack trace exposure, and a static token signing mode.",
+            "remediation_guidance": "Set `DEBUG_MODE = False`, `EXPOSE_STACK_TRACES = False`, and `TOKEN_SIGNING_MODE = \"ephemeral_rotatable_key\"`.",
+            "detected_at_ms": 1793242940027.66
+          }
+        ]
+      },
+      "alerts": [
+        {
+          "alert_id": "ALERT-001-CWE-89",
+          "finding_id": "FIND-CWE-89",
+          "cwe_id": "CWE-89",
+          "severity": "CRITICAL",
+          "endpoint": "/api/v1/users/search",
+          "file_path": "mock_enterprise/database.py",
+          "function_name": "lookup_user_by_username",
+          "line_number": 61,
+          "triggered_at_ms": 1793242940027.16,
+          "correlated_telemetry_events": 1,
+          "summary": "[CRITICAL] CWE-89 detected on /api/v1/users/search (mock_enterprise/database.py:61)"
+        },
+        {
+          "alert_id": "ALERT-002-CWE-862",
+          "finding_id": "FIND-CWE-862",
+          "cwe_id": "CWE-862",
+          "severity": "HIGH",
+          "endpoint": "/api/v1/admin/export-confidential",
+          "file_path": "mock_enterprise/service.py",
+          "function_name": "export_confidential_documents",
+          "line_number": 51,
+          "triggered_at_ms": 1793242940028.16,
+          "correlated_telemetry_events": 1,
+          "summary": "[HIGH] CWE-862 detected on /api/v1/admin/export-confidential (mock_enterprise/service.py:51)"
+        },
+        {
+          "alert_id": "ALERT-003-CWE-79",
+          "finding_id": "FIND-CWE-79",
+          "cwe_id": "CWE-79",
+          "severity": "MEDIUM",
+          "endpoint": "/ui/search-banner",
+          "file_path": "mock_enterprise/service.py",
+          "function_name": "render_search_banner",
+          "line_number": 42,
+          "triggered_at_ms": 1793242940029.16,
+          "correlated_telemetry_events": 1,
+          "summary": "[MEDIUM] CWE-79 detected on /ui/search-banner (mock_enterprise/service.py:42)"
+        },
+        {
+          "alert_id": "ALERT-004-CWE-489",
+          "finding_id": "FIND-CWE-489",
+          "cwe_id": "CWE-489",
+          "severity": "MEDIUM",
+          "endpoint": "/api/v1/health",
+          "file_path": "mock_enterprise/config.py",
+          "function_name": "module_config",
+          "line_number": 12,
+          "triggered_at_ms": 1793242940030.16,
+          "correlated_telemetry_events": 1,
+          "summary": "[MEDIUM] CWE-489 detected on /api/v1/health (mock_enterprise/config.py:12)"
+        }
+      ],
+      "root_causes": [
+        {
+          "incident_id": "INC-001-CWE-89",
+          "cwe_id": "CWE-89",
+          "file_path": "mock_enterprise/database.py",
+          "function_name": "lookup_user_by_username",
+          "line_number": 61,
+          "vulnerable_block": "def lookup_user_by_username(conn: sqlite3.Connection, username: str) -> list[dict[str, Any]]:\n    '''Look up user directory records by username.\n\n    SEEDED_WEAKNESS: CWE-89 (Improper Neutralization of Special Elements used in an SQL Command).\n    Uses direct Python f-string formatting instead of parameterized query placeholders.\n    '''\n    cursor = conn.cursor()\n    query = f\"SELECT id, username, email, role, department FROM users WHERE username = '{username}'\"\n    cursor.execute(query)\n    return [dict(row) for row in cursor.fetchall()]",
+          "ast_node_type": "FunctionDef",
+          "root_cause_explanation": "SQL query string is constructed dynamically using a Python f-string (`ast.JoinedStr`) with user input `username` rather than DB-API parameterized `?` placeholders.",
+          "remediation_contract": "Use parameterized SQL execution: cursor.execute(\"SELECT ... WHERE username = ?\", (username,))"
+        },
+        {
+          "incident_id": "INC-002-CWE-862",
+          "cwe_id": "CWE-862",
+          "file_path": "mock_enterprise/service.py",
+          "function_name": "export_confidential_documents",
+          "line_number": 51,
+          "vulnerable_block": "def export_confidential_documents(self, requester_role: str, actor: str = \"anonymous\") -> dict[str, Any]:\n        '''Administrative endpoint to export confidential corporate documents.\n\n        SEEDED_WEAKNESS: CWE-862 (Missing Authorization).\n        Does not verify whether `requester_role == 'admin'` before returning confidential records.\n        '''\n        self.telemetry.record_request(\"/api/v1/admin/export-confidential\", actor=actor, status=200)\n        cursor = self.conn.cursor()\n        cursor.execute(\n            \"SELECT id, title, classification, owner_username, content FROM documents WHERE classification = ?\",\n            (\"confidential\",),\n        )\n        docs = [dict(row) for row in cursor.fetchall()]\n        return {\"status\": \"ok\", \"exported_count\": len(docs), \"documents\": docs}",
+          "ast_node_type": "FunctionDef",
+          "root_cause_explanation": "Administrative export method accepts `requester_role` but never validates that the caller holds the `'admin'` role before querying confidential records.",
+          "remediation_contract": "Enforce an explicit authorization guard at the start of the method and raise PermissionError or return HTTP 403 when `requester_role != 'admin'`."
+        },
+        {
+          "incident_id": "INC-003-CWE-79",
+          "cwe_id": "CWE-79",
+          "file_path": "mock_enterprise/service.py",
+          "function_name": "render_search_banner",
+          "line_number": 42,
+          "vulnerable_block": "def render_search_banner(self, filter_label: str, actor: str = \"anonymous\") -> str:\n        '''Render an HTML banner summarizing the active directory filter.\n\n        SEEDED_WEAKNESS: CWE-79 (Improper Neutralization of Input During Web Page Generation).\n        Interpolates raw user-controlled `filter_label` directly into HTML markup without escaping.\n        '''\n        self.telemetry.record_request(\"/ui/search-banner\", actor=actor, status=200)\n        return f\"<div class='search-banner'>Active Directory Filter: {filter_label}</div>\"",
+          "ast_node_type": "FunctionDef",
+          "root_cause_explanation": "`render_search_banner` interpolates `filter_label` directly into an HTML `<div>` element without calling `html.escape()`.",
+          "remediation_contract": "Escape untrusted input with `safe_label = html.escape(filter_label, quote=True)` before rendering inside HTML markup."
+        },
+        {
+          "incident_id": "INC-004-CWE-489",
+          "cwe_id": "CWE-489",
+          "file_path": "mock_enterprise/config.py",
+          "function_name": "module_config",
+          "line_number": 12,
+          "vulnerable_block": "'''Mock Enterprise application configuration.\n\nContains intentionally seeded configuration weaknesses (CWE-489 / CWE-209)\nfor the Defensive Cyber Range Simulation Platform to audit and remediate.\n'''\n\nAPP_NAME = \"AcmeCorp Internal Portal\"\nENVIRONMENT = \"production\"\n\n# SEEDED_WEAKNESS: CWE-489 (Active Debug Code) & CWE-209 (Verbose Stack Traces)\nDEBUG_MODE = True\nEXPOSE_STACK_TRACES = True\n\n# SEEDED_WEAKNESS: CWE-798 / Hardcoded Fallback Token Secret\nTOKEN_SIGNING_MODE = \"weak_static_secret\"\nSESSION_TIMEOUT_MINUTES = 30\n",
+          "ast_node_type": "Module",
+          "root_cause_explanation": "Production configuration enables active debug flags, stack trace exposure, and a static token signing mode.",
+          "remediation_contract": "Set `DEBUG_MODE = False`, `EXPOSE_STACK_TRACES = False`, and `TOKEN_SIGNING_MODE = \"ephemeral_rotatable_key\"`."
+        }
+      ],
+      "patches": [
+        {
+          "patch_id": "PATCH-INC-001-CWE-89",
+          "incident_id": "INC-001-CWE-89",
+          "cwe_id": "CWE-89",
+          "file_path": "mock_enterprise/database.py",
+          "original_snippet": "'''Mock Enterprise SQLite Data Layer.\n\nProvides an in-memory or file-backed SQLite database with seeded corporate users,\ndocuments, and audit records. Contains an intentionally unparameterized query\npattern (CWE-89) for static analysis and automated remediation training.\n'''\n\nimport sqlite3\nfrom typing import Any\n\n\ndef create_connection(db_path: str = \":memory:\") -> sqlite3.Connection:\n    conn = sqlite3.connect(db_path)\n    conn.row_factory = sqlite3.Row\n    return conn\n\n\ndef bootstrap_schema(conn: sqlite3.Connection) -> None:\n    cursor = conn.cursor()\n    cursor.executescript(\n        '''\n        CREATE TABLE IF NOT EXISTS users (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,\n            username TEXT UNIQUE NOT NULL,\n            email TEXT NOT NULL,\n            role TEXT NOT NULL,\n            department TEXT NOT NULL\n        );\n\n        CREATE TABLE IF NOT EXISTS documents (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,\n            title TEXT NOT NULL,\n            classification TEXT NOT NULL,\n            owner_username TEXT NOT NULL,\n            content TEXT NOT NULL\n        );\n\n        DELETE FROM users;\n        INSERT INTO users (username, email, role, department) VALUES\n            ('alice', 'alice@acmecorp.internal', 'admin', 'Security'),\n            ('bob', 'bob@acmecorp.internal', 'analyst', 'Engineering'),\n            ('charlie', 'charlie@acmecorp.internal', 'viewer', 'Finance');\n\n        DELETE FROM documents;\n        INSERT INTO documents (title, classification, owner_username, content) VALUES\n            ('Q4 Architecture Roadmap', 'internal', 'bob', 'Planned migration to zero-trust service mesh.'),\n            ('Incident Response Playbook', 'confidential', 'alice', 'Escalation contacts and containment procedures.'),\n            ('Expense Policy 2026', 'public', 'charlie', 'Standard travel reimbursement guidelines.');\n        '''\n    )\n    conn.commit()\n\n\ndef lookup_user_by_username(conn: sqlite3.Connection, username: str) -> list[dict[str, Any]]:\n    '''Look up user directory records by username.\n\n    SEEDED_WEAKNESS: CWE-89 (Improper Neutralization of Special Elements used in an SQL Command).\n    Uses direct Python f-string formatting instead of parameterized query placeholders.\n    '''\n    cursor = conn.cursor()\n    query = f\"SELECT id, username, email, role, department FROM users WHERE username = '{username}'\"\n    cursor.execute(query)\n    return [dict(row) for row in cursor.fetchall()]\n\n\ndef list_public_documents(conn: sqlite3.Connection) -> list[dict[str, Any]]:\n    cursor = conn.cursor()\n    cursor.execute(\n        \"SELECT id, title, classification, owner_username, content FROM documents WHERE classification = ?\",\n        (\"public\",),\n    )\n    return [dict(row) for row in cursor.fetchall()]\n",
+          "patched_snippet": "'''Mock Enterprise SQLite Data Layer.\n\nProvides an in-memory or file-backed SQLite database with seeded corporate users,\ndocuments, and audit records. Contains an intentionally unparameterized query\npattern (CWE-89) for static analysis and automated remediation training.\n'''\n\nimport sqlite3\nfrom typing import Any\n\n\ndef create_connection(db_path: str = \":memory:\") -> sqlite3.Connection:\n    conn = sqlite3.connect(db_path)\n    conn.row_factory = sqlite3.Row\n    return conn\n\n\ndef bootstrap_schema(conn: sqlite3.Connection) -> None:\n    cursor = conn.cursor()\n    cursor.executescript(\n        '''\n        CREATE TABLE IF NOT EXISTS users (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,\n            username TEXT UNIQUE NOT NULL,\n            email TEXT NOT NULL,\n            role TEXT NOT NULL,\n            department TEXT NOT NULL\n        );\n\n        CREATE TABLE IF NOT EXISTS documents (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,\n            title TEXT NOT NULL,\n            classification TEXT NOT NULL,\n            owner_username TEXT NOT NULL,\n            content TEXT NOT NULL\n        );\n\n        DELETE FROM users;\n        INSERT INTO users (username, email, role, department) VALUES\n            ('alice', 'alice@acmecorp.internal', 'admin', 'Security'),\n            ('bob', 'bob@acmecorp.internal', 'analyst', 'Engineering'),\n            ('charlie', 'charlie@acmecorp.internal', 'viewer', 'Finance');\n\n        DELETE FROM documents;\n        INSERT INTO documents (title, classification, owner_username, content) VALUES\n            ('Q4 Architecture Roadmap', 'internal', 'bob', 'Planned migration to zero-trust service mesh.'),\n            ('Incident Response Playbook', 'confidential', 'alice', 'Escalation contacts and containment procedures.'),\n            ('Expense Policy 2026', 'public', 'charlie', 'Standard travel reimbursement guidelines.');\n        '''\n    )\n    conn.commit()\n\n\ndef lookup_user_by_username(conn: sqlite3.Connection, username: str) -> list[dict[str, Any]]:\n    '''Look up user directory records by username.\n\n    SEEDED_WEAKNESS: CWE-89 (Improper Neutralization of Special Elements used in an SQL Command).\n    Uses direct Python f-string formatting instead of parameterized query placeholders.\n    '''\n    cursor = conn.cursor()\n    query = \"SELECT id, username, email, role, department FROM users WHERE username = ?\"\n    cursor.execute(query, (username,))\n    return [dict(row) for row in cursor.fetchall()]\n\n\ndef list_public_documents(conn: sqlite3.Connection) -> list[dict[str, Any]]:\n    cursor = conn.cursor()\n    cursor.execute(\n        \"SELECT id, title, classification, owner_username, content FROM documents WHERE classification = ?\",\n        (\"public\",),\n    )\n    return [dict(row) for row in cursor.fetchall()]\n",
+          "unified_diff": "--- a/mock_enterprise/database.py\n+++ b/mock_enterprise/database.py\n@@ -58,8 +58,8 @@\n     Uses direct Python f-string formatting instead of parameterized query placeholders.\n     '''\n     cursor = conn.cursor()\n-    query = f\"SELECT id, username, email, role, department FROM users WHERE username = '{username}'\"\n-    cursor.execute(query)\n+    query = \"SELECT id, username, email, role, department FROM users WHERE username = ?\"\n+    cursor.execute(query, (username,))\n     return [dict(row) for row in cursor.fetchall()]\n \n \n",
+          "rationale": "Remediated CWE-89 according to contract: Use parameterized SQL execution: cursor.execute(\"SELECT ... WHERE username = ?\", (username,))",
+          "generated_at_ms": 1793242940027.3984
+        },
+        {
+          "patch_id": "PATCH-INC-002-CWE-862",
+          "incident_id": "INC-002-CWE-862",
+          "cwe_id": "CWE-862",
+          "file_path": "mock_enterprise/service.py",
+          "original_snippet": "'''Mock Enterprise Web & API Service Layer.\n\nSimulates corporate API endpoints for user directory lookup, search results rendering,\nand administrative audit configuration. Contains seeded weaknesses for CWE-862\n(Missing Authorization) and CWE-79 (Unescaped HTML Output).\n'''\n\nimport html\nimport sqlite3\nfrom typing import Any\n\nfrom mock_enterprise import config\nfrom mock_enterprise import database\nfrom mock_enterprise.telemetry import TelemetryCollector\n\n\nclass EnterprisePortalService:\n    '''Core service handler for the synthetic corporate portal.'''\n\n    def __init__(self, conn: sqlite3.Connection | None = None, telemetry: TelemetryCollector | None = None):\n        self.conn = conn or database.create_connection(\":memory:\")\n        database.bootstrap_schema(self.conn)\n        self.telemetry = telemetry or TelemetryCollector()\n\n    def get_health(self) -> dict[str, Any]:\n        '''Return service health and configuration posture.'''\n        self.telemetry.record_request(\"/api/v1/health\", actor=\"system\", status=200)\n        return {\n            \"app\": config.APP_NAME,\n            \"environment\": config.ENVIRONMENT,\n            \"debug_mode\": config.DEBUG_MODE,\n            \"expose_stack_traces\": config.EXPOSE_STACK_TRACES,\n            \"token_signing_mode\": config.TOKEN_SIGNING_MODE,\n        }\n\n    def search_directory(self, username_query: str, actor: str = \"anonymous\") -> dict[str, Any]:\n        '''Query the corporate user directory.'''\n        self.telemetry.record_request(\"/api/v1/users/search\", actor=actor, status=200)\n        results = database.lookup_user_by_username(self.conn, username_query)\n        return {\"count\": len(results), \"users\": results}\n\n    def render_search_banner(self, filter_label: str, actor: str = \"anonymous\") -> str:\n        '''Render an HTML banner summarizing the active directory filter.\n\n        SEEDED_WEAKNESS: CWE-79 (Improper Neutralization of Input During Web Page Generation).\n        Interpolates raw user-controlled `filter_label` directly into HTML markup without escaping.\n        '''\n        self.telemetry.record_request(\"/ui/search-banner\", actor=actor, status=200)\n        return f\"<div class='search-banner'>Active Directory Filter: {filter_label}</div>\"\n\n    def export_confidential_documents(self, requester_role: str, actor: str = \"anonymous\") -> dict[str, Any]:\n        '''Administrative endpoint to export confidential corporate documents.\n\n        SEEDED_WEAKNESS: CWE-862 (Missing Authorization).\n        Does not verify whether `requester_role == 'admin'` before returning confidential records.\n        '''\n        self.telemetry.record_request(\"/api/v1/admin/export-confidential\", actor=actor, status=200)\n        cursor = self.conn.cursor()\n        cursor.execute(\n            \"SELECT id, title, classification, owner_username, content FROM documents WHERE classification = ?\",\n            (\"confidential\",),\n        )\n        docs = [dict(row) for row in cursor.fetchall()]\n        return {\"status\": \"ok\", \"exported_count\": len(docs), \"documents\": docs}\n",
+          "patched_snippet": "'''Mock Enterprise Web & API Service Layer.\n\nSimulates corporate API endpoints for user directory lookup, search results rendering,\nand administrative audit configuration. Contains seeded weaknesses for CWE-862\n(Missing Authorization) and CWE-79 (Unescaped HTML Output).\n'''\n\nimport html\nimport sqlite3\nfrom typing import Any\n\nfrom mock_enterprise import config\nfrom mock_enterprise import database\nfrom mock_enterprise.telemetry import TelemetryCollector\n\n\nclass EnterprisePortalService:\n    '''Core service handler for the synthetic corporate portal.'''\n\n    def __init__(self, conn: sqlite3.Connection | None = None, telemetry: TelemetryCollector | None = None):\n        self.conn = conn or database.create_connection(\":memory:\")\n        database.bootstrap_schema(self.conn)\n        self.telemetry = telemetry or TelemetryCollector()\n\n    def get_health(self) -> dict[str, Any]:\n        '''Return service health and configuration posture.'''\n        self.telemetry.record_request(\"/api/v1/health\", actor=\"system\", status=200)\n        return {\n            \"app\": config.APP_NAME,\n            \"environment\": config.ENVIRONMENT,\n            \"debug_mode\": config.DEBUG_MODE,\n            \"expose_stack_traces\": config.EXPOSE_STACK_TRACES,\n            \"token_signing_mode\": config.TOKEN_SIGNING_MODE,\n        }\n\n    def search_directory(self, username_query: str, actor: str = \"anonymous\") -> dict[str, Any]:\n        '''Query the corporate user directory.'''\n        self.telemetry.record_request(\"/api/v1/users/search\", actor=actor, status=200)\n        results = database.lookup_user_by_username(self.conn, username_query)\n        return {\"count\": len(results), \"users\": results}\n\n    def render_search_banner(self, filter_label: str, actor: str = \"anonymous\") -> str:\n        '''Render an HTML banner summarizing the active directory filter.\n\n        SEEDED_WEAKNESS: CWE-79 (Improper Neutralization of Input During Web Page Generation).\n        Interpolates raw user-controlled `filter_label` directly into HTML markup without escaping.\n        '''\n        self.telemetry.record_request(\"/ui/search-banner\", actor=actor, status=200)\n        return f\"<div class='search-banner'>Active Directory Filter: {filter_label}</div>\"\n\n    def export_confidential_documents(self, requester_role: str, actor: str = \"anonymous\") -> dict[str, Any]:\n        '''Administrative endpoint to export confidential corporate documents.\n\n        SEEDED_WEAKNESS: CWE-862 (Missing Authorization).\n        Does not verify whether `requester_role == 'admin'` before returning confidential records.\n        '''\n        if requester_role != 'admin':\n            self.telemetry.record_request(\"/api/v1/admin/export-confidential\", actor=actor, status=403)\n            raise PermissionError(\"Admin role required to export confidential documents.\")\n        self.telemetry.record_request(\"/api/v1/admin/export-confidential\", actor=actor, status=200)\n        cursor = self.conn.cursor()\n        cursor.execute(\n            \"SELECT id, title, classification, owner_username, content FROM documents WHERE classification = ?\",\n            (\"confidential\",),\n        )\n        docs = [dict(row) for row in cursor.fetchall()]\n        return {\"status\": \"ok\", \"exported_count\": len(docs), \"documents\": docs}\n",
+          "unified_diff": "--- a/mock_enterprise/service.py\n+++ b/mock_enterprise/service.py\n@@ -54,6 +54,9 @@\n         SEEDED_WEAKNESS: CWE-862 (Missing Authorization).\n         Does not verify whether `requester_role == 'admin'` before returning confidential records.\n         '''\n+        if requester_role != 'admin':\n+            self.telemetry.record_request(\"/api/v1/admin/export-confidential\", actor=actor, status=403)\n+            raise PermissionError(\"Admin role required to export confidential documents.\")\n         self.telemetry.record_request(\"/api/v1/admin/export-confidential\", actor=actor, status=200)\n         cursor = self.conn.cursor()\n         cursor.execute(\n",
+          "rationale": "Remediated CWE-862 according to contract: Enforce an explicit authorization guard at the start of the method and raise PermissionError or return HTTP 403 when `requester_role != 'admin'`.",
+          "generated_at_ms": 1793242940031.2314
+        },
+        {
+          "patch_id": "PATCH-INC-003-CWE-79",
+          "incident_id": "INC-003-CWE-79",
+          "cwe_id": "CWE-79",
+          "file_path": "mock_enterprise/service.py",
+          "original_snippet": "'''Mock Enterprise Web & API Service Layer.\n\nSimulates corporate API endpoints for user directory lookup, search results rendering,\nand administrative audit configuration. Contains seeded weaknesses for CWE-862\n(Missing Authorization) and CWE-79 (Unescaped HTML Output).\n'''\n\nimport html\nimport sqlite3\nfrom typing import Any\n\nfrom mock_enterprise import config\nfrom mock_enterprise import database\nfrom mock_enterprise.telemetry import TelemetryCollector\n\n\nclass EnterprisePortalService:\n    '''Core service handler for the synthetic corporate portal.'''\n\n    def __init__(self, conn: sqlite3.Connection | None = None, telemetry: TelemetryCollector | None = None):\n        self.conn = conn or database.create_connection(\":memory:\")\n        database.bootstrap_schema(self.conn)\n        self.telemetry = telemetry or TelemetryCollector()\n\n    def get_health(self) -> dict[str, Any]:\n        '''Return service health and configuration posture.'''\n        self.telemetry.record_request(\"/api/v1/health\", actor=\"system\", status=200)\n        return {\n            \"app\": config.APP_NAME,\n            \"environment\": config.ENVIRONMENT,\n            \"debug_mode\": config.DEBUG_MODE,\n            \"expose_stack_traces\": config.EXPOSE_STACK_TRACES,\n            \"token_signing_mode\": config.TOKEN_SIGNING_MODE,\n        }\n\n    def search_directory(self, username_query: str, actor: str = \"anonymous\") -> dict[str, Any]:\n        '''Query the corporate user directory.'''\n        self.telemetry.record_request(\"/api/v1/users/search\", actor=actor, status=200)\n        results = database.lookup_user_by_username(self.conn, username_query)\n        return {\"count\": len(results), \"users\": results}\n\n    def render_search_banner(self, filter_label: str, actor: str = \"anonymous\") -> str:\n        '''Render an HTML banner summarizing the active directory filter.\n\n        SEEDED_WEAKNESS: CWE-79 (Improper Neutralization of Input During Web Page Generation).\n        Interpolates raw user-controlled `filter_label` directly into HTML markup without escaping.\n        '''\n        self.telemetry.record_request(\"/ui/search-banner\", actor=actor, status=200)\n        return f\"<div class='search-banner'>Active Directory Filter: {filter_label}</div>\"\n\n    def export_confidential_documents(self, requester_role: str, actor: str = \"anonymous\") -> dict[str, Any]:\n        '''Administrative endpoint to export confidential corporate documents.\n\n        SEEDED_WEAKNESS: CWE-862 (Missing Authorization).\n        Does not verify whether `requester_role == 'admin'` before returning confidential records.\n        '''\n        if requester_role != 'admin':\n            self.telemetry.record_request(\"/api/v1/admin/export-confidential\", actor=actor, status=403)\n            raise PermissionError(\"Admin role required to export confidential documents.\")\n        self.telemetry.record_request(\"/api/v1/admin/export-confidential\", actor=actor, status=200)\n        cursor = self.conn.cursor()\n        cursor.execute(\n            \"SELECT id, title, classification, owner_username, content FROM documents WHERE classification = ?\",\n            (\"confidential\",),\n        )\n        docs = [dict(row) for row in cursor.fetchall()]\n        return {\"status\": \"ok\", \"exported_count\": len(docs), \"documents\": docs}\n",
+          "patched_snippet": "'''Mock Enterprise Web & API Service Layer.\n\nSimulates corporate API endpoints for user directory lookup, search results rendering,\nand administrative audit configuration. Contains seeded weaknesses for CWE-862\n(Missing Authorization) and CWE-79 (Unescaped HTML Output).\n'''\n\nimport html\nimport sqlite3\nfrom typing import Any\n\nfrom mock_enterprise import config\nfrom mock_enterprise import database\nfrom mock_enterprise.telemetry import TelemetryCollector\n\n\nclass EnterprisePortalService:\n    '''Core service handler for the synthetic corporate portal.'''\n\n    def __init__(self, conn: sqlite3.Connection | None = None, telemetry: TelemetryCollector | None = None):\n        self.conn = conn or database.create_connection(\":memory:\")\n        database.bootstrap_schema(self.conn)\n        self.telemetry = telemetry or TelemetryCollector()\n\n    def get_health(self) -> dict[str, Any]:\n        '''Return service health and configuration posture.'''\n        self.telemetry.record_request(\"/api/v1/health\", actor=\"system\", status=200)\n        return {\n            \"app\": config.APP_NAME,\n            \"environment\": config.ENVIRONMENT,\n            \"debug_mode\": config.DEBUG_MODE,\n            \"expose_stack_traces\": config.EXPOSE_STACK_TRACES,\n            \"token_signing_mode\": config.TOKEN_SIGNING_MODE,\n        }\n\n    def search_directory(self, username_query: str, actor: str = \"anonymous\") -> dict[str, Any]:\n        '''Query the corporate user directory.'''\n        self.telemetry.record_request(\"/api/v1/users/search\", actor=actor, status=200)\n        results = database.lookup_user_by_username(self.conn, username_query)\n        return {\"count\": len(results), \"users\": results}\n\n    def render_search_banner(self, filter_label: str, actor: str = \"anonymous\") -> str:\n        '''Render an HTML banner summarizing the active directory filter.\n\n        SEEDED_WEAKNESS: CWE-79 (Improper Neutralization of Input During Web Page Generation).\n        Interpolates raw user-controlled `filter_label` directly into HTML markup without escaping.\n        '''\n        self.telemetry.record_request(\"/ui/search-banner\", actor=actor, status=200)\n        safe_label = html.escape(filter_label, quote=True)\n        return f\"<div class='search-banner'>Active Directory Filter: {safe_label}</div>\"\n\n    def export_confidential_documents(self, requester_role: str, actor: str = \"anonymous\") -> dict[str, Any]:\n        '''Administrative endpoint to export confidential corporate documents.\n\n        SEEDED_WEAKNESS: CWE-862 (Missing Authorization).\n        Does not verify whether `requester_role == 'admin'` before returning confidential records.\n        '''\n        if requester_role != 'admin':\n            self.telemetry.record_request(\"/api/v1/admin/export-confidential\", actor=actor, status=403)\n            raise PermissionError(\"Admin role required to export confidential documents.\")\n        self.telemetry.record_request(\"/api/v1/admin/export-confidential\", actor=actor, status=200)\n        cursor = self.conn.cursor()\n        cursor.execute(\n            \"SELECT id, title, classification, owner_username, content FROM documents WHERE classification = ?\",\n            (\"confidential\",),\n        )\n        docs = [dict(row) for row in cursor.fetchall()]\n        return {\"status\": \"ok\", \"exported_count\": len(docs), \"documents\": docs}\n",
+          "unified_diff": "--- a/mock_enterprise/service.py\n+++ b/mock_enterprise/service.py\n@@ -46,7 +46,8 @@\n         Interpolates raw user-controlled `filter_label` directly into HTML markup without escaping.\n         '''\n         self.telemetry.record_request(\"/ui/search-banner\", actor=actor, status=200)\n-        return f\"<div class='search-banner'>Active Directory Filter: {filter_label}</div>\"\n+        safe_label = html.escape(filter_label, quote=True)\n+        return f\"<div class='search-banner'>Active Directory Filter: {safe_label}</div>\"\n \n     def export_confidential_documents(self, requester_role: str, actor: str = \"anonymous\") -> dict[str, Any]:\n         '''Administrative endpoint to export confidential corporate documents.\n",
+          "rationale": "Remediated CWE-79 according to contract: Escape untrusted input with `safe_label = html.escape(filter_label, quote=True)` before rendering inside HTML markup.",
+          "generated_at_ms": 1793242940035.0515
+        },
+        {
+          "patch_id": "PATCH-INC-004-CWE-489",
+          "incident_id": "INC-004-CWE-489",
+          "cwe_id": "CWE-489",
+          "file_path": "mock_enterprise/config.py",
+          "original_snippet": "'''Mock Enterprise application configuration.\n\nContains intentionally seeded configuration weaknesses (CWE-489 / CWE-209)\nfor the Defensive Cyber Range Simulation Platform to audit and remediate.\n'''\n\nAPP_NAME = \"AcmeCorp Internal Portal\"\nENVIRONMENT = \"production\"\n\n# SEEDED_WEAKNESS: CWE-489 (Active Debug Code) & CWE-209 (Verbose Stack Traces)\nDEBUG_MODE = True\nEXPOSE_STACK_TRACES = True\n\n# SEEDED_WEAKNESS: CWE-798 / Hardcoded Fallback Token Secret\nTOKEN_SIGNING_MODE = \"weak_static_secret\"\nSESSION_TIMEOUT_MINUTES = 30\n",
+          "patched_snippet": "'''Mock Enterprise application configuration.\n\nContains intentionally seeded configuration weaknesses (CWE-489 / CWE-209)\nfor the Defensive Cyber Range Simulation Platform to audit and remediate.\n'''\n\nAPP_NAME = \"AcmeCorp Internal Portal\"\nENVIRONMENT = \"production\"\n\n# SEEDED_WEAKNESS: CWE-489 (Active Debug Code) & CWE-209 (Verbose Stack Traces)\nDEBUG_MODE = False\nEXPOSE_STACK_TRACES = False\n\n# SEEDED_WEAKNESS: CWE-798 / Hardcoded Fallback Token Secret\nTOKEN_SIGNING_MODE = \"ephemeral_rotatable_key\"\nSESSION_TIMEOUT_MINUTES = 30\n",
+          "unified_diff": "--- a/mock_enterprise/config.py\n+++ b/mock_enterprise/config.py\n@@ -8,9 +8,9 @@\n ENVIRONMENT = \"production\"\n \n # SEEDED_WEAKNESS: CWE-489 (Active Debug Code) & CWE-209 (Verbose Stack Traces)\n-DEBUG_MODE = True\n-EXPOSE_STACK_TRACES = True\n+DEBUG_MODE = False\n+EXPOSE_STACK_TRACES = False\n \n # SEEDED_WEAKNESS: CWE-798 / Hardcoded Fallback Token Secret\n-TOKEN_SIGNING_MODE = \"weak_static_secret\"\n+TOKEN_SIGNING_MODE = \"ephemeral_rotatable_key\"\n SESSION_TIMEOUT_MINUTES = 30\n",
+          "rationale": "Remediated CWE-489 according to contract: Set `DEBUG_MODE = False`, `EXPOSE_STACK_TRACES = False`, and `TOKEN_SIGNING_MODE = \"ephemeral_rotatable_key\"`.",
+          "generated_at_ms": 1793242940038.2324
+        }
+      ],
+      "validations": [
+        {
+          "patch_id": "PATCH-INC-001-CWE-89",
+          "incident_id": "INC-001-CWE-89",
+          "syntax_valid": true,
+          "functional_tests_passed": true,
+          "security_checks_passed": true,
+          "test_count": 4,
+          "details": [
+            "AST syntax check passed.",
+            "Functional Test 1 (user directory lookup) passed.",
+            "Functional Test 2 (public document listing) passed.",
+            "CWE-89 parameterized query invariant check: True"
+          ],
+          "passed": true
+        },
+        {
+          "patch_id": "PATCH-INC-002-CWE-862",
+          "incident_id": "INC-002-CWE-862",
+          "syntax_valid": true,
+          "functional_tests_passed": true,
+          "security_checks_passed": true,
+          "test_count": 4,
+          "details": [
+            "AST syntax check passed.",
+            "Functional Test 1 (user directory lookup) passed.",
+            "Functional Test 2 (public document listing) passed.",
+            "CWE-862 role authorization invariant check: True"
+          ],
+          "passed": true
+        },
+        {
+          "patch_id": "PATCH-INC-003-CWE-79",
+          "incident_id": "INC-003-CWE-79",
+          "syntax_valid": true,
+          "functional_tests_passed": true,
+          "security_checks_passed": true,
+          "test_count": 4,
+          "details": [
+            "AST syntax check passed.",
+            "Functional Test 1 (user directory lookup) passed.",
+            "Functional Test 2 (public document listing) passed.",
+            "CWE-79 HTML escaping invariant check: True"
+          ],
+          "passed": true
+        },
+        {
+          "patch_id": "PATCH-INC-004-CWE-489",
+          "incident_id": "INC-004-CWE-489",
+          "syntax_valid": true,
+          "functional_tests_passed": true,
+          "security_checks_passed": true,
+          "test_count": 4,
+          "details": [
+            "AST syntax check passed.",
+            "Functional Test 1 (user directory lookup) passed.",
+            "Functional Test 2 (public document listing) passed.",
+            "CWE-489 hardened production config check: True"
+          ],
+          "passed": true
+        }
+      ],
+      "deployments": [
+        {
+          "deployment_id": "DEP-PATCH-INC-001-CWE-89",
+          "patch_id": "PATCH-INC-001-CWE-89",
+          "incident_id": "INC-001-CWE-89",
+          "cwe_id": "CWE-89",
+          "file_path": "mock_enterprise/database.py",
+          "pre_patch_sha256": "dede2dec00856a0c6fe0dad0203b97258f811d3486ead885d58635e6faa61b70",
+          "post_patch_sha256": "8b32c80d21358bcdce853c45e4c55664c92da8f95d6b45cebc48c8b4a27883bd",
+          "backup_path": "/working_dir/c_398f029f1df7cc51/artifacts/file_generation/ttl=63d/intermediate/defensive_cyber_range/simulation_artifacts/workspace/backups/PATCH-INC-001-CWE-89_database.py.bak",
+          "deployed": true,
+          "rolled_back": false,
+          "deployed_at_ms": 1793242940030.3386,
+          "notes": "Deployed cleanly (Approved under 'auto_low_risk' policy (100% staging tests passed))."
+        },
+        {
+          "deployment_id": "DEP-PATCH-INC-002-CWE-862",
+          "patch_id": "PATCH-INC-002-CWE-862",
+          "incident_id": "INC-002-CWE-862",
+          "cwe_id": "CWE-862",
+          "file_path": "mock_enterprise/service.py",
+          "pre_patch_sha256": "3688ea5223b50f315a049ae9f248cebc85771a42970ee3e9ed8504de41006152",
+          "post_patch_sha256": "034c5248703ef5d92d76fb39bba5be5df96cdc5ff4d34865cc44e00444df17d9",
+          "backup_path": "/working_dir/c_398f029f1df7cc51/artifacts/file_generation/ttl=63d/intermediate/defensive_cyber_range/simulation_artifacts/workspace/backups/PATCH-INC-002-CWE-862_service.py.bak",
+          "deployed": true,
+          "rolled_back": false,
+          "deployed_at_ms": 1793242940034.18,
+          "notes": "Deployed cleanly (Approved under 'auto_low_risk' policy (100% staging tests passed))."
+        },
+        {
+          "deployment_id": "DEP-PATCH-INC-003-CWE-79",
+          "patch_id": "PATCH-INC-003-CWE-79",
+          "incident_id": "INC-003-CWE-79",
+          "cwe_id": "CWE-79",
+          "file_path": "mock_enterprise/service.py",
+          "pre_patch_sha256": "034c5248703ef5d92d76fb39bba5be5df96cdc5ff4d34865cc44e00444df17d9",
+          "post_patch_sha256": "3f3148dc3fc79d5f849dad8b599ccb6bcd64843c2fdcdad11f120bb97d4752cc",
+          "backup_path": "/working_dir/c_398f029f1df7cc51/artifacts/file_generation/ttl=63d/intermediate/defensive_cyber_range/simulation_artifacts/workspace/backups/PATCH-INC-003-CWE-79_service.py.bak",
+          "deployed": true,
+          "rolled_back": false,
+          "deployed_at_ms": 1793242940037.8547,
+          "notes": "Deployed cleanly (Approved under 'auto_low_risk' policy (100% staging tests passed))."
+        },
+        {
+          "deployment_id": "DEP-PATCH-INC-004-CWE-489",
+          "patch_id": "PATCH-INC-004-CWE-489",
+          "incident_id": "INC-004-CWE-489",
+          "cwe_id": "CWE-489",
+          "file_path": "mock_enterprise/config.py",
+          "pre_patch_sha256": "1914163b07d7e513defcf3824f71c3c09f66996242037c56c76aa42c2f776d3b",
+          "post_patch_sha256": "95dd9345e43ad5694fecf29307c722f52967fc4d6cd4cf261b69e17a256678eb",
+          "backup_path": "/working_dir/c_398f029f1df7cc51/artifacts/file_generation/ttl=63d/intermediate/defensive_cyber_range/simulation_artifacts/workspace/backups/PATCH-INC-004-CWE-489_config.py.bak",
+          "deployed": true,
+          "rolled_back": false,
+          "deployed_at_ms": 1793242940040.9512,
+          "notes": "Deployed cleanly (Approved under 'auto_low_risk' policy (100% staging tests passed))."
+        }
+      ],
+      "verifications": [
+        {
+          "finding_id": "FIND-CWE-89",
+          "cwe_id": "CWE-89",
+          "file_path": "mock_enterprise/database.py",
+          "remediated": true,
+          "verification_method": "AST & Configuration Re-Audit",
+          "details": "Verified CWE-89 in mock_enterprise/database.py is fully remediated.",
+          "verified_at_ms": 1793242940044.5781
+        },
+        {
+          "finding_id": "FIND-CWE-862",
+          "cwe_id": "CWE-862",
+          "file_path": "mock_enterprise/service.py",
+          "remediated": true,
+          "verification_method": "AST & Configuration Re-Audit",
+          "details": "Verified CWE-862 in mock_enterprise/service.py is fully remediated.",
+          "verified_at_ms": 1793242940044.5781
+        },
+        {
+          "finding_id": "FIND-CWE-79",
+          "cwe_id": "CWE-79",
+          "file_path": "mock_enterprise/service.py",
+          "remediated": true,
+          "verification_method": "AST & Configuration Re-Audit",
+          "details": "Verified CWE-79 in mock_enterprise/service.py is fully remediated.",
+          "verified_at_ms": 1793242940044.5781
+        },
+        {
+          "finding_id": "FIND-CWE-489",
+          "cwe_id": "CWE-489",
+          "file_path": "mock_enterprise/config.py",
+          "remediated": true,
+          "verification_method": "AST & Configuration Re-Audit",
+          "details": "Verified CWE-489 in mock_enterprise/config.py is fully remediated.",
+          "verified_at_ms": 1793242940044.5781
+        }
+      ],
+      "scorecard": {
+        "round_num": 1,
+        "ground_truth_total": 4,
+        "findings_discovered": 4,
+        "discovery_recall_pct": 100.0,
+        "alerts_triggered": 4,
+        "mean_time_to_detect_ms": 2.5,
+        "patches_generated": 4,
+        "patches_validated": 4,
+        "patches_deployed": 4,
+        "verified_remediated": 4,
+        "patch_correctness_pct": 100.0,
+        "regression_pass_rate_pct": 100.0,
+        "mean_time_to_remediate_ms": 7.17,
+        "security_posture_score": 100.0
+      }
+    },
+    {
+      "round": 2,
+      "analysis_report": {
+        "round": 2,
+        "mapped_endpoints": [
+          {
+            "file_path": "mock_enterprise/service.py",
+            "function_name": "get_health",
+            "endpoint": "/api/v1/health",
+            "parameters": [],
+            "has_auth_guard": false,
+            "line_number": 25
+          },
+          {
+            "file_path": "mock_enterprise/service.py",
+            "function_name": "search_directory",
+            "endpoint": "/api/v1/users/search",
+            "parameters": [
+              "username_query",
+              "actor"
+            ],
+            "has_auth_guard": false,
+            "line_number": 36
+          },
+          {
+            "file_path": "mock_enterprise/service.py",
+            "function_name": "render_search_banner",
+            "endpoint": "/ui/search-banner",
+            "parameters": [
+              "filter_label",
+              "actor"
+            ],
+            "has_auth_guard": false,
+            "line_number": 42
+          },
+          {
+            "file_path": "mock_enterprise/service.py",
+            "function_name": "export_confidential_documents",
+            "endpoint": "/api/v1/admin/export-confidential",
+            "parameters": [
+              "requester_role",
+              "actor"
+            ],
+            "has_auth_guard": true,
+            "line_number": 52
+          }
+        ],
+        "findings_count": 0,
+        "findings": []
+      },
+      "alerts": [],
+      "root_causes": [],
+      "patches": [],
+      "validations": [],
+      "deployments": [],
+      "verifications": [],
+      "scorecard": {
+        "round_num": 2,
+        "ground_truth_total": 4,
+        "findings_discovered": 0,
+        "discovery_recall_pct": 100.0,
+        "alerts_triggered": 0,
+        "mean_time_to_detect_ms": 0.0,
+        "patches_generated": 0,
+        "patches_validated": 0,
+        "patches_deployed": 0,
+        "verified_remediated": 0,
+        "patch_correctness_pct": 100.0,
+        "regression_pass_rate_pct": 100.0,
+        "mean_time_to_remediate_ms": 0.0,
+        "security_posture_score": 100.0
+      }
+    }
+  ],
+  "shared_memory": {
+    "rounds": [
+      {
+        "round_num": 1,
+        "recorded_at": "2026-10-29T03:02:20.044621+00:00",
+        "findings_discovered": 4,
+        "patches_deployed": 4,
+        "verified_remediated": 4,
+        "posture_score": 100.0
+      },
+      {
+        "round_num": 2,
+        "recorded_at": "2026-10-29T03:02:20.056592+00:00",
+        "findings_discovered": 0,
+        "patches_deployed": 0,
+        "verified_remediated": 0,
+        "posture_score": 100.0
+      }
+    ],
+    "lessons_learned": [
+      {
+        "id": 1,
+        "round_num": 1,
+        "cwe_id": "CWE-89",
+        "file_path": "mock_enterprise/database.py",
+        "patch_id": "PATCH-INC-001-CWE-89",
+        "remediated": 1,
+        "lesson_summary": "Remediated CWE-89 according to contract: Use parameterized SQL execution: cursor.execute(\"SELECT ... WHERE username = ?\", (username,))"
+      },
+      {
+        "id": 2,
+        "round_num": 1,
+        "cwe_id": "CWE-862",
+        "file_path": "mock_enterprise/service.py",
+        "patch_id": "PATCH-INC-002-CWE-862",
+        "remediated": 1,
+        "lesson_summary": "Remediated CWE-862 according to contract: Enforce an explicit authorization guard at the start of the method and raise PermissionError or return HTTP 403 when `requester_role != 'admin'`."
+      },
+      {
+        "id": 3,
+        "round_num": 1,
+        "cwe_id": "CWE-79",
+        "file_path": "mock_enterprise/service.py",
+        "patch_id": "PATCH-INC-003-CWE-79",
+        "remediated": 1,
+        "lesson_summary": "Remediated CWE-79 according to contract: Escape untrusted input with `safe_label = html.escape(filter_label, quote=True)` before rendering inside HTML markup."
+      },
+      {
+        "id": 4,
+        "round_num": 1,
+        "cwe_id": "CWE-489",
+        "file_path": "mock_enterprise/config.py",
+        "patch_id": "PATCH-INC-004-CWE-489",
+        "remediated": 1,
+        "lesson_summary": "Remediated CWE-489 according to contract: Set `DEBUG_MODE = False`, `EXPOSE_STACK_TRACES = False`, and `TOKEN_SIGNING_MODE = \"ephemeral_rotatable_key\"`."
+      }
+    ]
+  }
+}

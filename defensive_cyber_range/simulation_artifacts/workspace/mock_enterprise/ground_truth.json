@@ -1,0 +1,50 @@
+{
+  "application": "AcmeCorp Internal Portal",
+  "version": "1.0.0-vulnerable",
+  "seeded_vulnerabilities": [
+    {
+      "vuln_id": "VULN-001",
+      "cwe_id": "CWE-89",
+      "title": "Unparameterized SQL Query in User Directory Lookup",
+      "file_path": "mock_enterprise/database.py",
+      "function_name": "lookup_user_by_username",
+      "endpoint": "/api/v1/users/search",
+      "severity": "CRITICAL",
+      "cvss_score": 9.8,
+      "remediation_requirement": "Replace f-string SQL query construction with parameterized ? placeholder tuple."
+    },
+    {
+      "vuln_id": "VULN-002",
+      "cwe_id": "CWE-862",
+      "title": "Missing Role Authorization in Confidential Document Export",
+      "file_path": "mock_enterprise/service.py",
+      "function_name": "export_confidential_documents",
+      "endpoint": "/api/v1/admin/export-confidential",
+      "severity": "HIGH",
+      "cvss_score": 8.6,
+      "remediation_requirement": "Enforce explicit role check ensuring requester_role == 'admin' before querying confidential documents."
+    },
+    {
+      "vuln_id": "VULN-003",
+      "cwe_id": "CWE-79",
+      "title": "Unescaped HTML Output in Directory Search Banner",
+      "file_path": "mock_enterprise/service.py",
+      "function_name": "render_search_banner",
+      "endpoint": "/ui/search-banner",
+      "severity": "MEDIUM",
+      "cvss_score": 6.5,
+      "remediation_requirement": "Sanitize filter_label with html.escape(filter_label, quote=True) prior to HTML interpolation."
+    },
+    {
+      "vuln_id": "VULN-004",
+      "cwe_id": "CWE-489",
+      "title": "Production Debug Mode, Verbose Stack Traces, and Static Secret Mode Enabled",
+      "file_path": "mock_enterprise/config.py",
+      "function_name": "module_config",
+      "endpoint": "/api/v1/health",
+      "severity": "MEDIUM",
+      "cvss_score": 6.1,
+      "remediation_requirement": "Disable DEBUG_MODE and EXPOSE_STACK_TRACES in production and set TOKEN_SIGNING_MODE to 'ephemeral_rotatable_key'."
+    }
+  ]
+}

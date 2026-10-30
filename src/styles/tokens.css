@@ -1,0 +1,82 @@
+/* ==========================================================================
+   Citadel design tokens
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --bg-0: #04060a;
+  --bg-1: #06090f;
+  --bg-2: #090e16;
+  --bg-3: #0d141e;
+
+  --panel: rgba(13, 19, 28, 0.72);
+  --panel-solid: #0c121b;
+  --panel-raised: rgba(19, 27, 39, 0.82);
+  --panel-faint: rgba(255, 255, 255, 0.024);
+
+  /* Lines */
+  --line: rgba(174, 199, 224, 0.1);
+  --line-soft: rgba(174, 199, 224, 0.06);
+  --line-strong: rgba(186, 211, 236, 0.2);
+  --line-bright: rgba(213, 240, 255, 0.34);
+
+  /* Type */
+  --text: #edf3f9;
+  --text-2: #b7c4d4;
+  --muted: #8493a7;
+  --faint: #5f6c7f;
+
+  /* Accents */
+  --ice: #a5ecff;
+  --ice-strong: #6fdcff;
+  --violet: #bcabff;
+  --mint: #97f0cc;
+  --amber: #ffd49b;
+  --rose: #ff97a4;
+
+  /* Severity */
+  --critical: #ff97a4;
+  --high: #ffb98a;
+  --medium: #ffd9a3;
+  --low: #9ad9ff;
+
+  /* Radii */
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 28px;
+  --r-2xl: 36px;
+  --r-pill: 999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 18px 40px -24px rgba(0, 0, 0, 0.9);
+  --shadow-lg: 0 42px 90px -46px rgba(0, 0, 0, 0.95);
+  --shadow-glow: 0 0 80px -18px rgba(111, 220, 255, 0.28);
+
+  --inner-hair: inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.22);
+
+  /* Type families */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  --font-display: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas,
+    monospace;
+
+  /* Motion */
+  --ease: cubic-bezier(0.22, 0.8, 0.22, 1);
+  --ease-in-out: cubic-bezier(0.65, 0.05, 0.36, 1);
+  --dur-fast: 160ms;
+  --dur: 280ms;
+  --dur-slow: 620ms;
+
+  /* Layout */
+  --page: 1240px;
+  --console: 1560px;
+  --nav-h: 72px;
+  --sidebar-w: 268px;
+}
