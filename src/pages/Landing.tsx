@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import FloatingGlassIcon, { type FloatingGlassShape } from "../components/glass/FloatingGlassIcon";
+import { useMemo } from "react";
+import FloatingGlassIcon from "../components/glass/FloatingGlassIcon";
 import { Icon } from "../components/ui/Icon";
 import { Button, Pill, Reveal } from "../components/ui/primitives";
 import { Gauge, LineChart, SeverityBar } from "../components/ui/viz";
@@ -95,10 +95,6 @@ export default function Landing() {
   useDocumentTitle("Citadel — Autonomous Defensive Cyber Range");
   const { state } = useRange();
 
-  // Floating Glass Stage Interactive Controls
-  const [glassShape, setGlassShape] = useState<FloatingGlassShape>("Torus");
-  const [glassText, setGlassText] = useState<string>("CITADEL");
-
   const lastRound = state.rounds[state.rounds.length - 1];
   const posture = lastRound
     ? lastRound.scorecard.securityPostureScore
@@ -122,15 +118,15 @@ export default function Landing() {
       <main>
         {/* ================================================================
             FULL-SCREEN 3D FLOATING GLASS TORUS HERO
-            Takes the entire viewport with pure black background and text behind it
+            Takes the entire viewport matching Citadel cyber UI aesthetic
             ================================================================ */}
         <section className="hero-fullscreen" aria-labelledby="hero-title">
           {/* Full-bleed 3D WebGL Canvas taking the entire landing page */}
           <div className="hero-fullscreen__canvas">
             <FloatingGlassIcon
-              text={glassText}
-              shape={glassShape}
-              size={1.08}
+              text="CITADEL"
+              shape="Torus"
+              size={1.12}
               depth={1.15}
               chromatic={1.05}
               frost={0.12}
@@ -155,16 +151,11 @@ export default function Landing() {
               </span>
             </div>
 
-            {/* Central Action Dock */}
+            {/* Central Action Dock (Shifted down for unobstructed 3D torus breathing room) */}
             <div className="hero-fullscreen__dock">
-              <h1 id="hero-title" className="hero-fullscreen__headline">
-                See the breach <span className="accent">before it happens.</span>
+              <h1 id="hero-title" className="sr-only">
+                Citadel — Autonomous Defensive Cyber Range
               </h1>
-
-              <p className="hero-fullscreen__sub">
-                An isolated cyber range where an offensive swarm audits your code and a defensive swarm stages,
-                patches, and proves the fix in real time. Sealed in a SHA-256 tamper-evident ledger.
-              </p>
 
               <div className="hero-fullscreen__ctas">
                 <Button
@@ -194,64 +185,50 @@ export default function Landing() {
                   Architecture
                 </Button>
               </div>
-
-              {/* Floating 3D HUD Controls Pill */}
-              <div className="hero-fullscreen__controls">
-                <div className="hero__stage-pills">
-                  <span className="mono text-muted text-xs" style={{ alignSelf: "center", marginRight: 4 }}>
-                    Shape:
-                  </span>
-                  <button
-                    type="button"
-                    className={`stage-pill-btn ${glassShape === "Torus" ? "is-active" : ""}`}
-                    onClick={() => setGlassShape("Torus")}
-                  >
-                    Torus
-                  </button>
-                  <button
-                    type="button"
-                    className={`stage-pill-btn ${glassShape === "X" ? "is-active" : ""}`}
-                    onClick={() => setGlassShape("X")}
-                  >
-                    Shield (X)
-                  </button>
-                  <button
-                    type="button"
-                    className={`stage-pill-btn ${glassShape === "Sphere" ? "is-active" : ""}`}
-                    onClick={() => setGlassShape("Sphere")}
-                  >
-                    Sphere
-                  </button>
-                </div>
-
-                <div className="hero__stage-pills">
-                  <span className="mono text-muted text-xs" style={{ alignSelf: "center", marginRight: 4 }}>
-                    Text:
-                  </span>
-                  {(["CITADEL", "DEFENSE", "RANGE"] as const).map((label) => (
-                    <button
-                      key={label}
-                      type="button"
-                      className={`stage-pill-btn ${glassText === label ? "is-active" : ""}`}
-                      onClick={() => setGlassText(label)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="hero-fullscreen__hint">
-                <Icon name="target" size={11} />
-                <span>Drag anywhere to orient in 3D · Real-time optical refraction</span>
-              </div>
             </div>
 
             {/* Scroll down prompt */}
-            <a href="#features" className="hero-fullscreen__scroll" aria-label="Scroll to explore features">
+            <a href="#overview" className="hero-fullscreen__scroll" aria-label="Scroll to explore platform">
               <span>Scroll to explore platform</span>
               <Icon name="chevron-down" size={14} />
             </a>
+          </div>
+        </section>
+
+        {/* ================================================================
+            MISSION NARRATIVE INTRO (Shifted below hero for clean 3D focus)
+            ================================================================ */}
+        <section className="section hero-narrative-section" id="overview">
+          <div className="container">
+            <Reveal className="hero-narrative-card">
+              <div className="hero-narrative-card__lead">
+                <span className="hero__eyebrow--warm">
+                  <Icon name="shield-check" size={13} />
+                  Autonomous Defensive Cyber Range
+                </span>
+                <h2 className="hero-narrative-card__heading">
+                  See the breach <span className="gradient-text">before it happens.</span>
+                </h2>
+              </div>
+              <p className="hero-narrative-card__sub">
+                An isolated cyber range where an offensive swarm audits your code and a defensive swarm stages,
+                patches, and proves the fix in real time. Sealed in a SHA-256 tamper-evident ledger.
+              </p>
+              <div className="hero-narrative-card__pills">
+                <span className="hero-narrative-card__pill">
+                  <Icon name="shield" size={12} />
+                  Mode 1: Closed-Loop Swarm Simulation
+                </span>
+                <span className="hero-narrative-card__pill">
+                  <Icon name="folder" size={12} />
+                  Mode 2: Live Local Folder Auto-Remediation
+                </span>
+                <span className="hero-narrative-card__pill">
+                  <Icon name="fingerprint" size={12} />
+                  SHA-256 Cryptographic Audit Ledger
+                </span>
+              </div>
+            </Reveal>
           </div>
         </section>
 

@@ -97,21 +97,25 @@
   margin: 4px 3px 18px;
   padding: 12px 13px;
   border-radius: 12px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(174, 199, 224, 0.12);
   background: linear-gradient(
-    150deg,
-    rgba(255, 255, 255, 0.045),
-    rgba(255, 255, 255, 0.012)
+    145deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.015)
   );
-  box-shadow: var(--inner-hair);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   transition: border-color var(--dur-fast) var(--ease),
-    background var(--dur-fast) var(--ease);
+    background var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
   flex: none;
 }
 
 .workspace-card:hover {
-  border-color: var(--line-strong);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(174, 199, 224, 0.24);
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 20px -6px rgba(0, 0, 0, 0.45);
 }
 
 .workspace-card__top {
@@ -767,13 +771,17 @@
   border-color: rgba(96, 200, 245, 0.32);
   background: linear-gradient(
     150deg,
-    rgba(96, 200, 245, 0.09) 0%,
-    rgba(6, 12, 19, 0.8) 100%
+    rgba(96, 200, 245, 0.1) 0%,
+    rgba(8, 14, 22, 0.75) 100%
   );
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px 0 rgba(165, 236, 255, 0.18), 0 8px 24px -6px rgba(0, 0, 0, 0.4);
 }
 
 .workspace-card--live:hover {
   border-color: rgba(96, 200, 245, 0.55);
+  box-shadow: inset 0 1px 0 rgba(165, 236, 255, 0.28), 0 12px 30px -6px rgba(111, 220, 255, 0.15);
 }
 
 .tag--live {

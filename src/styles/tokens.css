@@ -16,6 +16,12 @@
   --panel-raised: rgba(19, 27, 39, 0.82);
   --panel-faint: rgba(255, 255, 255, 0.024);
 
+  /* Glassmorphism */
+  --glass-panel: linear-gradient(155deg, rgba(16, 25, 39, 0.68) 0%, rgba(8, 13, 21, 0.78) 100%);
+  --glass-border: 1px solid rgba(174, 199, 224, 0.12);
+  --glass-blur: blur(18px) saturate(160%);
+  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 36px -12px rgba(0, 0, 0, 0.6);
+
   /* Lines */
   --line: rgba(174, 199, 224, 0.1);
   --line-soft: rgba(174, 199, 224, 0.06);

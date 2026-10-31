@@ -245,40 +245,71 @@ export default function FloatingGlassIcon({
       const g = P.getContext("2d");
       if (!g) return;
       const W = 1024;
-      // Pure deep black background
-      g.fillStyle = "#000000";
+      
+      // Citadel theme background: deep obsidian-slate gradient matching platform palette
+      const bgGrad = g.createRadialGradient(W * 0.5, W * 0.45, 0, W * 0.5, W * 0.5, W * 0.72);
+      bgGrad.addColorStop(0, "#0b121e");
+      bgGrad.addColorStop(0.55, "#06090f");
+      bgGrad.addColorStop(1, "#04060a");
+      g.fillStyle = bgGrad;
       g.fillRect(0, 0, W, W);
 
-      // Subtle atmospheric radial illumination behind the text & torus
-      const warm = g.createRadialGradient(W * 0.24, W * 0.76, 0, W * 0.24, W * 0.76, W * 0.58);
-      warm.addColorStop(0, "rgba(255, 122, 69, 0.42)");
-      warm.addColorStop(0.55, "rgba(255, 122, 69, 0.1)");
-      warm.addColorStop(1, "rgba(0, 0, 0, 0)");
-      g.fillStyle = warm;
+      // Subtle cyber tactical grid matching Citadel's UI
+      g.strokeStyle = "rgba(174, 199, 224, 0.035)";
+      g.lineWidth = 1;
+      const step = 48;
+      for (let x = 0; x < W; x += step) {
+        g.beginPath();
+        g.moveTo(x, 0);
+        g.lineTo(x, W);
+        g.stroke();
+      }
+      for (let y = 0; y < W; y += step) {
+        g.beginPath();
+        g.moveTo(0, y);
+        g.lineTo(W, y);
+        g.stroke();
+      }
+
+      // Atmospheric cyan/ice illumination matching Citadel's --ice-strong (#6fdcff)
+      const iceGlow = g.createRadialGradient(W * 0.28, W * 0.35, 0, W * 0.28, W * 0.35, W * 0.52);
+      iceGlow.addColorStop(0, "rgba(111, 220, 255, 0.28)");
+      iceGlow.addColorStop(0.5, "rgba(59, 130, 246, 0.08)");
+      iceGlow.addColorStop(1, "rgba(4, 6, 10, 0)");
+      g.fillStyle = iceGlow;
       g.fillRect(0, 0, W, W);
 
-      const cool = g.createRadialGradient(W * 0.76, W * 0.24, 0, W * 0.76, W * 0.24, W * 0.58);
-      cool.addColorStop(0, "rgba(61, 123, 255, 0.52)");
-      cool.addColorStop(0.55, "rgba(61, 123, 255, 0.12)");
-      cool.addColorStop(1, "rgba(0, 0, 0, 0)");
-      g.fillStyle = cool;
+      // Soft violet atmospheric illumination matching Citadel's --violet (#bcabff)
+      const violetGlow = g.createRadialGradient(W * 0.74, W * 0.65, 0, W * 0.74, W * 0.65, W * 0.56);
+      violetGlow.addColorStop(0, "rgba(188, 171, 255, 0.22)");
+      violetGlow.addColorStop(0.5, "rgba(124, 58, 237, 0.06)");
+      violetGlow.addColorStop(1, "rgba(4, 6, 10, 0)");
+      g.fillStyle = violetGlow;
       g.fillRect(0, 0, W, W);
 
       // Text drawn directly behind the floating glass torus
       const currentText = stateRef.current.text || "CITADEL";
-      const face = '900 100px "Big Shoulders Display", Impact, "Arial Narrow", sans-serif';
+      const face = '900 100px "Space Grotesk", "Big Shoulders Display", Impact, sans-serif';
       g.font = face;
       const measured = g.measureText(currentText).width;
       const fs = Math.min((W * 0.84) / (measured || 100) * 100, W * 0.44);
       g.font = face.replace("100px", `${Math.round(fs)}px`);
-      g.fillStyle = "#f5f6f8";
+      
+      // Crisp platinum-ice text with subtle cyber luminescence
+      g.shadowColor = "rgba(111, 220, 255, 0.4)";
+      g.shadowBlur = 28;
+      g.fillStyle = "#edf3f9";
       g.textAlign = "center";
       g.textBaseline = "middle";
       g.fillText(currentText, W / 2, W / 2 - fs * 0.02);
 
+      // Reset shadow for crisp subtext
+      g.shadowColor = "transparent";
+      g.shadowBlur = 0;
+
       // Subtitle line underneath the main brand wordmark
-      g.font = '700 24px "Instrument Sans", sans-serif';
-      g.fillStyle = "rgba(147, 180, 255, 0.8)";
+      g.font = '700 22px "JetBrains Mono", monospace';
+      g.fillStyle = "rgba(165, 236, 255, 0.85)";
       g.fillText("DEFENSIVE CYBER RANGE · AUTONOMOUS AGENT SIMULATION", W / 2, W / 2 + fs * 0.44);
 
       uploadPlate();
@@ -512,7 +543,7 @@ export default function FloatingGlassIcon({
         width: "100%",
         height: "100%",
         overflow: "hidden",
-        background: "#000000",
+        background: "radial-gradient(circle at 50% 45%, #0b111c 0%, #06090f 65%, #04060a 100%)",
         ...style,
       }}
     >
@@ -525,7 +556,7 @@ export default function FloatingGlassIcon({
           cursor: "grab",
           touchAction: "pan-y",
         }}
-        aria-label="Real-time floating glass torus refracting CITADEL over deep black studio"
+        aria-label="Real-time floating glass torus refracting CITADEL cyber range studio"
       />
       {webglFailed && (
         <div
@@ -537,7 +568,7 @@ export default function FloatingGlassIcon({
             padding: 24,
             textAlign: "center",
             color: "var(--muted)",
-            background: "#000000",
+            background: "#06090f",
           }}
         >
           <p>WebGL is unavailable. The 3D glass torus is running in 2D fallback mode.</p>
