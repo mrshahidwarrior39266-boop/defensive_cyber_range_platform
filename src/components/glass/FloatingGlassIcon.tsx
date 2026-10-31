@@ -72,39 +72,52 @@ vec3 nrm(vec3 p){
 }
 
 vec3 plate(vec2 uv, float r){
-  vec3 c = texture2D(uPlate, clamp(uv, 0.0, 1.0)).rgb;
+  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+    return vec3(0.0);
+  }
+  vec3 c = texture2D(uPlate, uv).rgb;
   if (r < 0.0005) return c;
   vec3 s = c;
   for (int i = 0; i < 8; i++) {
     float a = float(i) * 0.785398 + 0.3;
     vec2 d = vec2(cos(a), sin(a));
-    s += texture2D(uPlate, clamp(uv + d * r, 0.0, 1.0)).rgb;
-    s += texture2D(uPlate, clamp(uv + d * r * 0.5, 0.0, 1.0)).rgb;
+    vec2 p1 = uv + d * r;
+    if (p1.x >= 0.0 && p1.x <= 1.0 && p1.y >= 0.0 && p1.y <= 1.0) {
+      s += texture2D(uPlate, p1).rgb;
+    }
+    vec2 p2 = uv + d * r * 0.5;
+    if (p2.x >= 0.0 && p2.x <= 1.0 && p2.y >= 0.0 && p2.y <= 1.0) {
+      s += texture2D(uPlate, p2).rgb;
+    }
   }
   return s / 17.0;
 }
 
 vec3 samp(float ior, vec3 n, vec3 rd, vec2 uv, vec2 cuv, float r){
   vec3 rf = refract(rd, n, 1.0 / ior);
-  vec2 off = (rf.xy - rd.xy) * uDepth * 0.3 + (cuv - uv) * 0.1 * uDepth;
+  vec2 off = (rf.xy - rd.xy) * uDepth * 0.28 + (cuv - uv) * 0.08 * uDepth;
   return plate(uv + off, r);
 }
 
 void main(){
-  vec2 uv = gl_FragCoord.xy / uRes;
-  vec2 ndc = uv * 2.0 - 1.0;
+  // Normalized screen coords corrected for aspect ratio (perfect circles, never oval)
+  vec2 p = (gl_FragCoord.xy - 0.5 * uRes) / min(uRes.x, uRes.y);
   vec3 ro = vec3(0.0, 0.0, 5.0);
-  vec3 rd = normalize(vec3(ndc * 0.41421356, -1.0));
+  vec3 rd = normalize(vec3(p * 0.828427, -1.0));
   float t = 0.0, minD = 1e9;
   vec3 pm = ro;
-  for (int i = 0; i < 72; i++) {
-    vec3 p = ro + rd * t;
-    float d = map(p);
-    if (d < minD) { minD = d; pm = p; }
+  for (int i = 0; i < 76; i++) {
+    vec3 pos = ro + rd * t;
+    float d = map(pos);
+    if (d < minD) { minD = d; pm = pos; }
     if (d < 0.0008 || t > 9.0) break;
     t += d;
   }
-  vec3 bg = plate(uv, 0.0);
+
+  // Plate sampling coordinates: center-aligned plate across any aspect ratio
+  vec2 plate_uv = p * 0.52 + vec2(0.5);
+  vec3 bg = plate(plate_uv, 0.0);
+
   float alpha = 1.0 - smoothstep(0.001, 0.012, minD);
   if (alpha <= 0.0) { gl_FragColor = vec4(bg, 1.0); return; }
   vec3 n = nrm(pm);
@@ -113,9 +126,9 @@ void main(){
   vec2 cuv = vec2(0.5) + uOff / 4.142;
   float spread = uChroma * 0.06;
   vec3 col = vec3(
-    samp(1.5 - spread, n, rd, uv, cuv, r).r,
-    samp(1.5, n, rd, uv, cuv, r).g,
-    samp(1.5 + spread, n, rd, uv, cuv, r).b
+    samp(1.5 - spread, n, rd, plate_uv, cuv, r).r,
+    samp(1.5, n, rd, plate_uv, cuv, r).g,
+    samp(1.5 + spread, n, rd, plate_uv, cuv, r).b
   );
   col *= mix(vec3(1.0), uTint, 0.9);
   vec3 rr = reflect(rd, n);
@@ -155,11 +168,11 @@ function Ry(a: number): Float32Array {
 export default function FloatingGlassIcon({
   text = "CITADEL",
   shape = "Torus",
-  size = 0.9,
-  depth = 1.0,
-  chromatic = 1.0,
+  size = 1.05,
+  depth = 1.15,
+  chromatic = 1.05,
   frost = 0.12,
-  speed = 1.0,
+  speed = 0.85,
   tint = [1.0, 1.0, 1.0],
   className = "",
   style,
@@ -232,38 +245,41 @@ export default function FloatingGlassIcon({
       const g = P.getContext("2d");
       if (!g) return;
       const W = 1024;
-      // Base background gradient: deep obsidian to cyber slate
-      const base = g.createLinearGradient(0, 0, W, W);
-      base.addColorStop(0, "#0b0d12");
-      base.addColorStop(1, "#151922");
-      g.fillStyle = base;
+      // Pure deep black background
+      g.fillStyle = "#000000";
       g.fillRect(0, 0, W, W);
 
-      // Warm radial glow on bottom-left (warm amber/coral)
-      const warm = g.createRadialGradient(220, 860, 0, 220, 860, 620);
-      warm.addColorStop(0, "rgba(255, 122, 69, 0.78)");
-      warm.addColorStop(1, "rgba(255, 122, 69, 0)");
+      // Subtle atmospheric radial illumination behind the text & torus
+      const warm = g.createRadialGradient(W * 0.24, W * 0.76, 0, W * 0.24, W * 0.76, W * 0.58);
+      warm.addColorStop(0, "rgba(255, 122, 69, 0.42)");
+      warm.addColorStop(0.55, "rgba(255, 122, 69, 0.1)");
+      warm.addColorStop(1, "rgba(0, 0, 0, 0)");
       g.fillStyle = warm;
       g.fillRect(0, 0, W, W);
 
-      // Cool cyber-ice radial glow on top-right (cyber cobalt/ice)
-      const cool = g.createRadialGradient(820, 180, 0, 820, 180, 640);
-      cool.addColorStop(0, "rgba(61, 123, 255, 0.82)");
-      cool.addColorStop(1, "rgba(61, 123, 255, 0)");
+      const cool = g.createRadialGradient(W * 0.76, W * 0.24, 0, W * 0.76, W * 0.24, W * 0.58);
+      cool.addColorStop(0, "rgba(61, 123, 255, 0.52)");
+      cool.addColorStop(0.55, "rgba(61, 123, 255, 0.12)");
+      cool.addColorStop(1, "rgba(0, 0, 0, 0)");
       g.fillStyle = cool;
       g.fillRect(0, 0, W, W);
 
-      // Bold display typography refracted through the glass
+      // Text drawn directly behind the floating glass torus
       const currentText = stateRef.current.text || "CITADEL";
       const face = '900 100px "Big Shoulders Display", Impact, "Arial Narrow", sans-serif';
       g.font = face;
       const measured = g.measureText(currentText).width;
-      const fs = Math.min((W * 0.86) / (measured || 100) * 100, W * 0.84 / 0.86);
+      const fs = Math.min((W * 0.84) / (measured || 100) * 100, W * 0.44);
       g.font = face.replace("100px", `${Math.round(fs)}px`);
-      g.fillStyle = "#f3efe8";
+      g.fillStyle = "#f5f6f8";
       g.textAlign = "center";
       g.textBaseline = "middle";
-      g.fillText(currentText, W / 2, W / 2 + fs * 0.03);
+      g.fillText(currentText, W / 2, W / 2 - fs * 0.02);
+
+      // Subtitle line underneath the main brand wordmark
+      g.font = '700 24px "Instrument Sans", sans-serif';
+      g.fillStyle = "rgba(147, 180, 255, 0.8)";
+      g.fillText("DEFENSIVE CYBER RANGE · AUTONOMOUS AGENT SIMULATION", W / 2, W / 2 + fs * 0.44);
 
       uploadPlate();
     };
@@ -344,10 +360,12 @@ export default function FloatingGlassIcon({
     // Resize viewport
     const resize = () => {
       if (!gl || !cv) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const px = Math.max(64, Math.min(1200, Math.round(cv.clientWidth * dpr)));
-      if (cv.width !== px || cv.height !== px) {
-        cv.width = cv.height = px;
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      const pxW = Math.max(64, Math.round(cv.clientWidth * dpr));
+      const pxH = Math.max(64, Math.round(cv.clientHeight * dpr));
+      if (cv.width !== pxW || cv.height !== pxH) {
+        cv.width = pxW;
+        cv.height = pxH;
       }
       gl.viewport(0, 0, cv.width, cv.height);
     };
@@ -492,12 +510,9 @@ export default function FloatingGlassIcon({
       style={{
         position: "relative",
         width: "100%",
-        aspectRatio: "1",
-        borderRadius: 14,
+        height: "100%",
         overflow: "hidden",
-        background: "#07090e",
-        border: "1px solid rgba(255, 255, 255, 0.12)",
-        boxShadow: "0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+        background: "#000000",
         ...style,
       }}
     >
@@ -510,7 +525,7 @@ export default function FloatingGlassIcon({
           cursor: "grab",
           touchAction: "pan-y",
         }}
-        aria-label="Real-time floating glass torus refracting CITADEL"
+        aria-label="Real-time floating glass torus refracting CITADEL over deep black studio"
       />
       {webglFailed && (
         <div
@@ -522,9 +537,10 @@ export default function FloatingGlassIcon({
             padding: 24,
             textAlign: "center",
             color: "var(--muted)",
+            background: "#000000",
           }}
         >
-          <p>WebGL is unavailable. The 3D glass torus is running in 2D CSS fallback mode.</p>
+          <p>WebGL is unavailable. The 3D glass torus is running in 2D fallback mode.</p>
         </div>
       )}
     </div>

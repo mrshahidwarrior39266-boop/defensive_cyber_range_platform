@@ -121,37 +121,52 @@ export default function Landing() {
 
       <main>
         {/* ================================================================
-            ORIGINKIT INSPIRED SPLIT HERO WITH FLOATING GLASS TORUS
+            FULL-SCREEN 3D FLOATING GLASS TORUS HERO
+            Takes the entire viewport with pure black background and text behind it
             ================================================================ */}
-        <section className="hero" aria-labelledby="hero-title">
-          <div className="hero__ambient" aria-hidden="true">
-            <div className="hero__orb hero__orb--ice" />
-            <div className="hero__orb hero__orb--violet" />
-            <div className="hero__grid" />
-            <div className="hero__beam" />
+        <section className="hero-fullscreen" aria-labelledby="hero-title">
+          {/* Full-bleed 3D WebGL Canvas taking the entire landing page */}
+          <div className="hero-fullscreen__canvas">
+            <FloatingGlassIcon
+              text={glassText}
+              shape={glassShape}
+              size={1.08}
+              depth={1.15}
+              chromatic={1.05}
+              frost={0.12}
+              speed={0.85}
+            />
           </div>
 
-          <div className="hero__inner hero__inner--split">
-            {/* Left Column: Bold Condensed Typography & Copy */}
-            <div className="hero__copy hero__copy--split">
+          {/* Vignette overlay */}
+          <div className="hero-fullscreen__vignette" />
+
+          {/* Foreground UI Layer */}
+          <div className="hero-fullscreen__overlay">
+            {/* Top Tags Bar */}
+            <div className="hero-fullscreen__top-tags">
               <span className="hero__eyebrow--warm">
                 <Icon name="shield-check" size={13} />
                 Mode 1 &amp; Mode 2 · Autonomous Defensive Range
               </span>
+              <span className="hero-fullscreen__badge">
+                <span className="dot" />
+                Zero Network Egress · Isolated Sandbox
+              </span>
+            </div>
 
-              <h1 id="hero-title" className="hero__title--display">
-                See the breach
-                <br />
-                <span className="accent">before it happens.</span>
+            {/* Central Action Dock */}
+            <div className="hero-fullscreen__dock">
+              <h1 id="hero-title" className="hero-fullscreen__headline">
+                See the breach <span className="accent">before it happens.</span>
               </h1>
 
-              <p className="hero__sub--originkit">
-                An isolated cyber range where an offensive swarm audits your code
-                and a defensive swarm stages, patches, and proves the fix in real time.
-                Every action is sealed in a tamper-evident cryptographic ledger.
+              <p className="hero-fullscreen__sub">
+                An isolated cyber range where an offensive swarm audits your code and a defensive swarm stages,
+                patches, and proves the fix in real time. Sealed in a SHA-256 tamper-evident ledger.
               </p>
 
-              <div className="hero__cta--originkit">
+              <div className="hero-fullscreen__ctas">
                 <Button
                   to="/console"
                   size="lg"
@@ -180,35 +195,8 @@ export default function Landing() {
                 </Button>
               </div>
 
-              <div className="hero__meta" style={{ justifyContent: "flex-start", marginTop: 8 }}>
-                <span>
-                  <Icon name="shield" size={12} /> Static AST analysis
-                </span>
-                <span>
-                  <Icon name="lock" size={12} /> Isolated sandbox (0 egress)
-                </span>
-                <span>
-                  <Icon name="fingerprint" size={12} /> SHA-256 tamper-evident
-                </span>
-              </div>
-            </div>
-
-            {/* Right Column: Real-time Floating Glass Torus Viewport */}
-            <div className="hero__stage-wrap">
-              <div className="hero__stage-box">
-                <FloatingGlassIcon
-                  text={glassText}
-                  shape={glassShape}
-                  size={0.92}
-                  depth={1.05}
-                  chromatic={1.0}
-                  frost={0.12}
-                  speed={0.9}
-                />
-              </div>
-
-              {/* Interactive Control HUD for 3D Floating Glass */}
-              <div className="hero__stage-bar">
+              {/* Floating 3D HUD Controls Pill */}
+              <div className="hero-fullscreen__controls">
                 <div className="hero__stage-pills">
                   <span className="mono text-muted text-xs" style={{ alignSelf: "center", marginRight: 4 }}>
                     Shape:
@@ -253,10 +241,17 @@ export default function Landing() {
                 </div>
               </div>
 
-              <span className="mono text-xs text-muted" style={{ fontSize: 11 }}>
-                <Icon name="target" size={11} /> Real refraction shader · Drag to orient in 3D
-              </span>
+              <div className="hero-fullscreen__hint">
+                <Icon name="target" size={11} />
+                <span>Drag anywhere to orient in 3D · Real-time optical refraction</span>
+              </div>
             </div>
+
+            {/* Scroll down prompt */}
+            <a href="#features" className="hero-fullscreen__scroll" aria-label="Scroll to explore features">
+              <span>Scroll to explore platform</span>
+              <Icon name="chevron-down" size={14} />
+            </a>
           </div>
         </section>
 

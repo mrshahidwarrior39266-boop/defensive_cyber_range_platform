@@ -2109,3 +2109,181 @@
   }
 }
 
+/* ==========================================================================
+   Full-Screen 3D Glass Torus Hero (Originkit Full Canvas Experience)
+   ========================================================================== */
+
+.hero-fullscreen {
+  position: relative;
+  width: 100vw;
+  height: 100svh;
+  min-height: 720px;
+  background: #000000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.hero-fullscreen__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.hero-fullscreen__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.72) 95%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.hero-fullscreen__overlay {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: calc(var(--nav-h) + 16px) clamp(16px, 3.5vw, 40px) 24px;
+  pointer-events: none; /* Pointer clicks & drags pass directly through to the 3D WebGL torus canvas */
+}
+
+.hero-fullscreen__top-tags {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1320px;
+  pointer-events: auto;
+}
+
+.hero-fullscreen__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(18, 21, 28, 0.75);
+  border: 1px solid rgba(35, 40, 52, 0.85);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: #98a0b2;
+  backdrop-filter: blur(12px);
+}
+
+.hero-fullscreen__dock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  max-width: 880px;
+  margin-top: auto;
+  margin-bottom: 20px;
+  pointer-events: auto;
+}
+
+.hero-fullscreen__headline {
+  font-family: var(--font-display-hero), "Big Shoulders Display", Impact, "Arial Narrow", sans-serif;
+  font-size: clamp(2.4rem, 6vw, 4.8rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 0.92;
+  letter-spacing: 0.005em;
+  color: #eceef4;
+  margin: 0;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.95);
+}
+
+.hero-fullscreen__headline span.accent {
+  color: #93b4ff;
+}
+
+.hero-fullscreen__sub {
+  margin: 0;
+  max-width: 60ch;
+  color: #c8c7c5;
+  font-size: clamp(13.5px, 1.05vw, 15.5px);
+  line-height: 1.6;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.95);
+}
+
+.hero-fullscreen__ctas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.hero-fullscreen__controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  background: rgba(11, 13, 18, 0.85);
+  border: 1px solid rgba(35, 40, 52, 0.95);
+  border-radius: 999px;
+  padding: 6px 16px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+  margin-top: 2px;
+}
+
+.hero-fullscreen__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(152, 160, 178, 0.8);
+  letter-spacing: 0.06em;
+}
+
+.hero-fullscreen__scroll {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #98a0b2;
+  text-decoration: none;
+  pointer-events: auto;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.hero-fullscreen__scroll:hover {
+  color: #eceef4;
+  transform: translateY(2px);
+}
+
+@media (max-width: 768px) {
+  .hero-fullscreen__headline {
+    font-size: clamp(2rem, 7.5vw, 3.2rem);
+  }
+  .hero-fullscreen__sub {
+    font-size: 13px;
+  }
+  .hero-fullscreen__top-tags {
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+  }
+  .hero-fullscreen__controls {
+    border-radius: 12px;
+    padding: 8px 12px;
+  }
+}
+
+
