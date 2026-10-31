@@ -1793,3 +1793,319 @@
     grid-column: auto;
   }
 }
+
+/* ==========================================================================
+   Originkit Glass Icon & Cyber-Studio Landing Theme
+   ========================================================================== */
+
+:root {
+  --originkit-bg: #0b0d12;
+  --originkit-panel: #12151c;
+  --originkit-line: #232834;
+  --originkit-fg: #eceef4;
+  --originkit-muted: #98a0b2;
+  --originkit-accent: #93b4ff;
+  --originkit-accent-ink: #0b0d12;
+  --originkit-warm: #ff7a45;
+  --font-display-hero: "Big Shoulders Display", Impact, "Arial Narrow", sans-serif;
+  --font-body-hero: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Split Hero Layout */
+.hero {
+  min-height: calc(100svh - 20px);
+  display: flex;
+  align-items: center;
+  padding: calc(var(--nav-h) + clamp(16px, 4vh, 48px)) 0 clamp(32px, 6vh, 64px);
+  position: relative;
+}
+
+.hero__inner--split {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr) !important;
+  gap: clamp(24px, 4.5vw, 64px) !important;
+  align-items: center !important;
+  text-align: left !important;
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 3.5vw, 42px);
+}
+
+.hero__copy--split {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start !important;
+  text-align: left !important;
+  gap: 18px;
+  max-width: 640px;
+  position: relative;
+  z-index: 2;
+}
+
+.hero__eyebrow--warm {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #ff7a45 !important;
+  font-weight: 700;
+}
+
+.hero__title--display {
+  font-family: var(--font-display-hero), "Big Shoulders Display", Impact, "Arial Narrow", sans-serif !important;
+  font-size: clamp(3.2rem, 7.5vw, 6.2rem) !important;
+  line-height: 0.88 !important;
+  letter-spacing: 0.005em !important;
+  text-transform: uppercase !important;
+  font-weight: 900 !important;
+  color: #eceef4 !important;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.hero__title--display span.accent {
+  color: #93b4ff;
+  background: none;
+  -webkit-background-clip: unset;
+  filter: none;
+}
+
+.hero__sub--originkit {
+  margin: 4px 0 0;
+  max-width: 50ch;
+  color: #98a0b2 !important;
+  font-size: clamp(14px, 1.05vw, 16px) !important;
+  line-height: 1.65 !important;
+  font-family: var(--font-body-hero), sans-serif;
+}
+
+.hero__cta--originkit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.btn--originkit-primary {
+  background: #93b4ff !important;
+  color: #0b0d12 !important;
+  border-color: #93b4ff !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
+  padding: 12px 24px !important;
+  box-shadow: 0 4px 20px rgba(147, 180, 255, 0.28);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.btn--originkit-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.btn--originkit-ghost {
+  border-radius: 999px !important;
+  padding: 12px 22px !important;
+  border: 1px solid #232834 !important;
+  color: #eceef4 !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.btn--originkit-ghost:hover {
+  border-color: #98a0b2 !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* Stage Wrap for Floating Glass Torus */
+.hero__stage-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 520px;
+  justify-self: end;
+  position: relative;
+  z-index: 2;
+  animation: hero-glass-in 1400ms var(--ease) 200ms both;
+}
+
+.hero__stage-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 14px;
+  background: #12151c;
+  border: 1px solid #232834;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  color: #98a0b2;
+}
+
+.hero__stage-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.stage-pill-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #98a0b2;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.stage-pill-btn:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #eceef4;
+}
+
+.stage-pill-btn.is-active {
+  background: rgba(147, 180, 255, 0.15);
+  border-color: #93b4ff;
+  color: #93b4ff;
+  font-weight: 600;
+}
+
+/* Originkit 3-up Features */
+.originkit-features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(20px, 3vw, 36px);
+  margin-top: 36px;
+}
+
+.originkit-feature-card {
+  background: #12151c;
+  border: 1px solid #232834;
+  border-radius: 14px;
+  padding: 28px 24px;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.originkit-feature-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(147, 180, 255, 0.35);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+}
+
+.originkit-feature-card .k {
+  display: block;
+  width: 38px;
+  height: 3px;
+  margin-bottom: 18px;
+  background: #93b4ff;
+  border-radius: 2px;
+}
+
+.originkit-feature-card:nth-child(2) .k {
+  background: #ff7a45;
+}
+
+.originkit-feature-card:nth-child(3) .k {
+  background: #eceef4;
+}
+
+.originkit-feature-card h3 {
+  margin: 0 0 10px;
+  font-family: var(--font-display-hero), "Big Shoulders Display", Impact, "Arial Narrow", sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #eceef4;
+}
+
+.originkit-feature-card p {
+  margin: 0;
+  color: #98a0b2;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Closing CTA Split */
+.originkit-cta {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  gap: 32px;
+  align-items: center;
+  background: #12151c;
+  border: 1px solid #232834;
+  border-radius: 16px;
+  padding: clamp(32px, 4.5vw, 54px);
+  position: relative;
+  overflow: hidden;
+}
+
+.originkit-cta h2 {
+  font-family: var(--font-display-hero), "Big Shoulders Display", Impact, "Arial Narrow", sans-serif;
+  font-size: clamp(2.4rem, 5vw, 3.8rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 0.92;
+  margin: 0 0 14px;
+  color: #eceef4;
+}
+
+.originkit-cta p {
+  color: #98a0b2;
+  margin: 0;
+  font-size: 1.05rem;
+  max-width: 52ch;
+  line-height: 1.6;
+}
+
+.originkit-cta__action {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.originkit-cli-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid #232834;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #98a0b2;
+  user-select: all;
+}
+
+@media (max-width: 960px) {
+  .hero__inner--split {
+    grid-template-columns: minmax(0, 1fr) !important;
+    text-align: center !important;
+    gap: 36px !important;
+  }
+  .hero__copy--split {
+    align-items: center !important;
+    text-align: center !important;
+    margin: 0 auto;
+  }
+  .hero__stage-wrap {
+    justify-self: center !important;
+    max-width: 440px;
+    margin: 0 auto;
+  }
+  .originkit-features {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .originkit-cta {
+    grid-template-columns: minmax(0, 1fr);
+    text-align: left;
+  }
+}
+

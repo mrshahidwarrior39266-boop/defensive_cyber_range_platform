@@ -13,3 +13,6 @@ __pycache__
 .cloud-attachments/
 cyber_range_test_samples*
 skills-lock.json
+
+.vercel
+.env*
