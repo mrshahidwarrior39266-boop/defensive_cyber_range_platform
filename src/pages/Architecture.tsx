@@ -132,7 +132,7 @@ export default function Architecture() {
                 shape="Torus"
                 speed={0.4}
                 depth={1}
-                glass={{ tint: "#e9fdff", chromatic: 0.35, frost: 0.32 }}
+                glass={{ tint: "#f7f2e8", chromatic: 0.35, frost: 0.32 }}
                 orient={{ angleX: 56, angleY: 18, angleZ: -12 }}
               />
               <div className="docs-hero__orb-meta">

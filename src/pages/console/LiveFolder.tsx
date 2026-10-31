@@ -783,13 +783,13 @@ export default function LiveFolder() {
       />
 
       {/* Mode 2 Isolation Guarantee Banner */}
-      <div className="banner" style={{ background: "rgba(100, 200, 255, 0.05)", borderColor: "rgba(100, 200, 255, 0.2)" }}>
-        <div className="banner__icon" style={{ background: "rgba(100, 200, 255, 0.12)", color: "var(--ice)" }}>
+      <div className="banner" style={{ background: "rgba(155, 170, 151, 0.08)", borderColor: "rgba(155, 170, 151, 0.28)" }}>
+        <div className="banner__icon" style={{ background: "rgba(155, 170, 151, 0.16)", color: "var(--sage-strong)" }}>
           <Icon name="layers" size={16} />
         </div>
         <div>
           <div className="row spread align-center">
-            <b style={{ color: "var(--ice)" }}>Mode 2 · Dedicated Local Codebase Engine</b>
+            <b style={{ color: "var(--cream)" }}>Mode 2 · Dedicated Local Codebase Engine</b>
             <Pill tone="live">ISOLATED FROM MODE 1 RANGE</Pill>
           </div>
           <p style={{ color: "var(--muted)", fontSize: 12, marginTop: 4 }}>
@@ -1229,7 +1229,7 @@ export default function LiveFolder() {
                   background: "rgba(255,255,255,0.02)",
                 }}
               >
-                <span style={{ color: "var(--ice)", display: "inline-block", marginBottom: 12 }}>
+                <span style={{ color: "var(--sage-strong)", display: "inline-block", marginBottom: 12 }}>
                   <Icon name="folder" size={32} />
                 </span>
                 <h4 style={{ margin: "0 0 6px" }}>Select a Project Directory</h4>
@@ -1339,7 +1339,7 @@ export default function LiveFolder() {
                     borderRadius: 10,
                     padding: "12px 14px",
                     cursor: "pointer",
-                    background: activePreset === "acme" ? "rgba(100, 200, 255, 0.08)" : "transparent",
+                    background: activePreset === "acme" ? "rgba(155, 170, 151, 0.14)" : "transparent",
                   }}
                   onClick={() => {
                     handleSelectPreset("acme");
@@ -1361,7 +1361,7 @@ export default function LiveFolder() {
                     borderRadius: 10,
                     padding: "12px 14px",
                     cursor: "pointer",
-                    background: activePreset === "gateway" ? "rgba(100, 200, 255, 0.08)" : "transparent",
+                    background: activePreset === "gateway" ? "rgba(155, 170, 151, 0.14)" : "transparent",
                   }}
                   onClick={() => {
                     handleSelectPreset("gateway");
@@ -1383,7 +1383,7 @@ export default function LiveFolder() {
                     borderRadius: 10,
                     padding: "12px 14px",
                     cursor: "pointer",
-                    background: activePreset === "node" ? "rgba(100, 200, 255, 0.08)" : "transparent",
+                    background: activePreset === "node" ? "rgba(155, 170, 151, 0.14)" : "transparent",
                   }}
                   onClick={() => {
                     handleSelectPreset("node");

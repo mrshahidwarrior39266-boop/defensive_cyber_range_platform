@@ -158,7 +158,7 @@ float band(float x, float center, float halfWidth, float softness) {
 }
 
 vec3 envMap(vec3 d) {
-  vec3 base = mix(vec3(0.012, 0.018, 0.028), vec3(0.075, 0.10, 0.13),
+  vec3 base = mix(vec3(0.027, 0.012, 0.020), vec3(0.12, 0.04, 0.08),
                   smoothstep(-0.55, 0.9, d.y));
   float az = atan(d.x, d.z) + uPointer.x * 0.16;
   float el = asin(clamp(d.y, -1.0, 1.0));
@@ -170,9 +170,9 @@ vec3 envMap(vec3 d) {
 
   vec3 col = base;
   col += key   * vec3(2.10, 1.95, 1.70);
-  col += fill  * vec3(0.28, 0.66, 1.15) * 0.95;
-  col += strip * vec3(0.80, 0.97, 1.05) * 0.55;
-  col += warm  * vec3(1.10, 0.55, 0.30) * 0.30;
+  col += fill  * vec3(0.68, 0.17, 0.33) * 0.95;
+  col += strip * vec3(0.61, 0.67, 0.59) * 0.55;
+  col += warm  * vec3(0.87, 0.73, 0.54) * 0.40;
   return col;
 }
 
@@ -180,25 +180,25 @@ vec3 envMap(vec3 d) {
 
 vec3 bg(vec2 p) {
   float aspect = uRes.x / uRes.y;
-  vec3 col = mix(vec3(0.011, 0.017, 0.027), vec3(0.022, 0.038, 0.056),
+  vec3 col = mix(vec3(0.027, 0.012, 0.020), vec3(0.086, 0.039, 0.070),
                  smoothstep(-1.1, 1.1, p.y));
 
-  col += vec3(0.16, 0.52, 0.80) * 0.30 *
+  col += vec3(0.68, 0.17, 0.33) * 0.35 *
          exp(-length(p - vec2(-0.86, 0.46)) * 1.15);
-  col += vec3(0.44, 0.28, 0.96) * 0.24 *
+  col += vec3(0.61, 0.67, 0.59) * 0.24 *
          exp(-length(p - vec2(1.02, -0.20)) * 1.20);
-  col += vec3(0.95, 0.56, 0.32) * 0.09 *
+  col += vec3(0.87, 0.73, 0.54) * 0.18 *
          exp(-length(p - vec2(0.18, -0.94)) * 1.60);
 
   /* a long soft light ribbon, used to reveal the refraction */
   float ribbon = smoothstep(0.30, 0.0, abs(p.y + 0.22 - sin(p.x * 2.2) * 0.06));
-  col += vec3(0.60, 0.88, 1.0) * ribbon * 0.055;
+  col += vec3(0.97, 0.95, 0.91) * ribbon * 0.055;
 
   float ring = abs(length(p - vec2(-0.08, 0.10)) - 1.18);
-  col += vec3(0.55, 0.85, 1.0) * smoothstep(0.012, 0.0, ring) * 0.20;
+  col += vec3(0.68, 0.17, 0.33) * smoothstep(0.012, 0.0, ring) * 0.20;
 
   float specks = smoothstep(0.9965, 1.0, hash21(floor(p * 54.0)));
-  col += vec3(0.85, 0.95, 1.0) * specks * 0.45;
+  col += vec3(0.97, 0.95, 0.91) * specks * 0.45;
 
   /* the prepared studio plate adds believable light behind the glass */
   vec2 euv = p / vec2(aspect, 1.0) * 0.5 + 0.5;
@@ -265,7 +265,7 @@ vec3 shadeGlass(vec3 pos, vec3 n, int body) {
 
   /* thin bright fresnel edge */
   float rim = pow(1.0 - ndv, 3.2);
-  col += mix(tint, vec3(0.80, 0.95, 1.0), 0.5) * rim * 0.48;
+  col += mix(tint, vec3(0.97, 0.95, 0.91), 0.5) * rim * 0.48;
 
   /* laser-bright specular glints from the softboxes */
   vec3 l1 = normalize(vec3(-0.55, 0.78, 0.62));
@@ -273,7 +273,7 @@ vec3 shadeGlass(vec3 pos, vec3 n, int body) {
   float s1 = pow(max(dot(reflect(rd, n), l1), 0.0), 92.0);
   float s2 = pow(max(dot(reflect(rd, n), l2), 0.0), 140.0);
   col += vec3(1.0, 0.99, 0.96) * s1 * 1.9;
-  col += vec3(0.72, 0.92, 1.0) * s2 * 1.2;
+  col += vec3(0.61, 0.67, 0.59) * s2 * 1.2;
 
   /* a faint etched logo, only for the logo shape */
   if (uShape == 3 && uHasLogo > 0.5) {
@@ -281,8 +281,8 @@ vec3 shadeGlass(vec3 pos, vec3 n, int body) {
     vec2 luv = lp.xy * 0.52 + 0.5;
     if (luv.x > 0.0 && luv.x < 1.0 && luv.y > 0.0 && luv.y < 1.0) {
       float mark = texture2D(uLogo, luv).a;
-      col = mix(col, tint * 0.16 + vec3(0.02, 0.04, 0.06), mark * 0.82);
-      col += vec3(0.55, 0.82, 1.0) * smoothstep(0.55, 0.0, mark) * mark * 0.35;
+      col = mix(col, tint * 0.16 + vec3(0.04, 0.015, 0.03), mark * 0.82);
+      col += vec3(0.68, 0.17, 0.33) * smoothstep(0.55, 0.0, mark) * mark * 0.35;
     }
   }
 
@@ -344,7 +344,7 @@ void main() {
     cover = 1.0;
   } else if (minD < 0.05) {
     cover = smoothstep(0.05, 0.0, minD) * 0.55;
-    glassCol = vec3(0.55, 0.82, 1.0) * 0.9;
+    glassCol = vec3(0.68, 0.17, 0.33) * 0.9;
   }
 
   /* a whisper of ambient light around the cluster */
@@ -353,8 +353,8 @@ void main() {
   aura *= (1.0 - cover);
 
   float alpha = clamp(cover + aura, 0.0, 1.0);
-  vec3 finalCol = mix(vec3(0.40, 0.72, 0.92), glassCol, cover);
-  finalCol = mix(finalCol, vec3(0.30, 0.60, 0.80), aura * 1.6);
+  vec3 finalCol = mix(vec3(0.68, 0.17, 0.33), glassCol, cover);
+  finalCol = mix(finalCol, vec3(0.61, 0.67, 0.59), aura * 1.6);
 
   gl_FragColor = vec4(finalCol, alpha);
 }

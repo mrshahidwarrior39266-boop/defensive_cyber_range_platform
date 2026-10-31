@@ -208,7 +208,7 @@ function Sidebar({
         {isLiveMode ? (
           <Link to="/console/live" className="workspace-card workspace-card--live">
             <div className="workspace-card__top">
-              <span className="lab" style={{ color: "var(--ice)" }}>Mode 2 · Live Codebase</span>
+              <span className="lab" style={{ color: "var(--sage-strong)" }}>Mode 2 · Live Codebase</span>
               <Icon name="chevron-right" size={12} />
             </div>
             <div className="workspace-card__name">Local Codebase Engine</div>

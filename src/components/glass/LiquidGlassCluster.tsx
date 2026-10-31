@@ -180,7 +180,7 @@ function buildEnvCanvas(): HTMLCanvasElement | null {
   canvas.height = 512;
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
-  ctx.fillStyle = "#07090d";
+  ctx.fillStyle = "#070305";
   ctx.fillRect(0, 0, 1024, 512);
 
   const softbox = (
@@ -191,10 +191,10 @@ function buildEnvCanvas(): HTMLCanvasElement | null {
     intensity: number,
   ) => {
     const grd = ctx.createLinearGradient(x, y, x, y + h);
-    grd.addColorStop(0, `rgba(255, 255, 255, ${intensity})`);
-    grd.addColorStop(1, `rgba(60, 70, 84, ${intensity * 0.2})`);
+    grd.addColorStop(0, `rgba(247, 242, 232, ${intensity})`);
+    grd.addColorStop(1, `rgba(117, 108, 96, ${intensity * 0.2})`);
     ctx.fillStyle = grd;
-    ctx.shadowColor = "#dfefff";
+    ctx.shadowColor = "#dfba89";
     ctx.shadowBlur = 90;
     ctx.beginPath();
     const rr = (ctx as unknown as { roundRect?: (...a: unknown[]) => void })
@@ -241,15 +241,15 @@ function drawTextBackdrop(b: BackdropGroup): HTMLCanvasElement {
   if (!ctx) return canvas;
 
   const bg = ctx.createLinearGradient(0, 0, 1024, 512);
-  bg.addColorStop(0, "#0a1118");
-  bg.addColorStop(0.55, "#101b25");
-  bg.addColorStop(1, "#0b0f19");
+  bg.addColorStop(0, "#220c18");
+  bg.addColorStop(0.55, "#12060e");
+  bg.addColorStop(1, "#070305");
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, 1024, 512);
 
   const glow = ctx.createRadialGradient(260, 160, 0, 260, 160, 360);
-  glow.addColorStop(0, "rgba(120, 230, 255, 0.22)");
-  glow.addColorStop(1, "rgba(120, 230, 255, 0)");
+  glow.addColorStop(0, "rgba(173, 44, 84, 0.28)");
+  glow.addColorStop(1, "rgba(173, 44, 84, 0)");
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, 1024, 512);
 
@@ -259,10 +259,10 @@ function drawTextBackdrop(b: BackdropGroup): HTMLCanvasElement {
   const weight = font.fontWeight ?? 500;
   const style = font.fontStyle ?? "normal";
   ctx.font = `${style} ${weight} ${size}px ${family}`;
-  ctx.fillStyle = b.textColor ?? "#eaf6ff";
+  ctx.fillStyle = b.textColor ?? "#f7f2e8";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.shadowColor = "rgba(150, 235, 255, 0.35)";
+  ctx.shadowColor = "rgba(173, 44, 84, 0.45)";
   ctx.shadowBlur = 42;
   ctx.fillText(b.text ?? "", 512, 256);
   return canvas;

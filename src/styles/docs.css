@@ -150,7 +150,7 @@
   font-size: 8.5px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(165, 236, 255, 0.65);
+  color: var(--sage);
 }
 
 .arch-section h2 {
@@ -259,14 +259,16 @@
   border: 1px solid var(--line-strong);
   background: linear-gradient(
       160deg,
-      rgba(18, 26, 37, 0.72),
-      rgba(6, 10, 16, 0.82)
+      rgba(28, 14, 23, 0.82),
+      rgba(14, 6, 11, 0.92)
     ),
     radial-gradient(
       80% 60% at 50% 0%,
-      rgba(130, 220, 255, 0.06),
+      rgba(173, 44, 84, 0.12),
       transparent 70%
     );
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
   box-shadow: var(--inner-hair), var(--shadow-lg);
   overflow: hidden;
 }
@@ -303,7 +305,7 @@
 }
 
 .arch-map__label svg {
-  color: rgba(151, 240, 204, 0.6);
+  color: var(--sage);
 }
 
 .arch-map__chips {
@@ -337,7 +339,9 @@
   flex-direction: column;
   border-radius: 14px;
   border: 1px solid var(--line);
-  background: rgba(4, 8, 13, 0.4);
+  background: rgba(22, 10, 18, 0.6);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   overflow: hidden;
 }
 
@@ -368,11 +372,11 @@
   font-family: var(--font-mono);
   font-size: 6.5px;
   letter-spacing: 0.1em;
-  color: rgba(165, 236, 255, 0.45);
+  color: var(--sage);
 }
 
 .arch-swarm--defense header em {
-  color: rgba(188, 171, 255, 0.5);
+  color: var(--cream-gold);
 }
 
 .arch-agent {
@@ -432,13 +436,13 @@
   border: 1px solid var(--line-strong);
   background: linear-gradient(
     150deg,
-    rgba(165, 236, 255, 0.075),
+    rgba(155, 170, 151, 0.12),
     rgba(255, 255, 255, 0.02)
   );
 }
 
 .arch-core__node svg {
-  color: var(--ice);
+  color: var(--cream);
   margin-bottom: 2px;
 }
 
@@ -475,7 +479,7 @@
   background: linear-gradient(
     180deg,
     var(--line-strong),
-    rgba(165, 236, 255, 0.3),
+    rgba(155, 170, 151, 0.4),
     var(--line-strong)
   );
 }
@@ -487,8 +491,8 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--ice);
-  box-shadow: 0 0 8px rgba(165, 236, 255, 0.9);
+  background: var(--sage);
+  box-shadow: 0 0 8px rgba(155, 170, 151, 0.85);
   animation: core-flow 3.4s var(--ease-in-out) infinite;
 }
 
@@ -518,7 +522,7 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--faint);
-  background: #0a1016;
+  background: #160a12;
   padding: 2px 4px;
   white-space: nowrap;
 }
@@ -721,12 +725,12 @@
   margin-top: 18px;
   padding: 15px 16px;
   border-radius: 13px;
-  border: 1px solid rgba(165, 236, 255, 0.13);
-  background: rgba(165, 236, 255, 0.035);
+  border: 1px solid rgba(155, 170, 151, 0.25);
+  background: rgba(155, 170, 151, 0.08);
 }
 
 .arch-note svg {
-  color: var(--ice);
+  color: var(--sage);
   flex: none;
   margin-top: 1px;
 }

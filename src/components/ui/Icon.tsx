@@ -412,13 +412,14 @@ export function BrandMark({ size = 30 }: { size?: number }) {
     >
       <defs>
         <linearGradient id={`${id}-a`} x1="6" y1="3" x2="34" y2="37">
-          <stop stopColor="#effeff" />
-          <stop offset="0.45" stopColor="#9fe6ff" />
-          <stop offset="1" stopColor="#b6a5ff" />
+          <stop stopColor="#f7f2e8" />
+          <stop offset="0.4" stopColor="#dfba89" />
+          <stop offset="1" stopColor="#ad2c54" />
         </linearGradient>
         <linearGradient id={`${id}-b`} x1="10" y1="6" x2="30" y2="34">
-          <stop stopColor="#ffffff" stopOpacity="0.9" />
-          <stop offset="1" stopColor="#7fd4f5" stopOpacity="0.25" />
+          <stop stopColor="#f7f2e8" stopOpacity="0.95" />
+          <stop offset="0.5" stopColor="#9baa97" stopOpacity="0.85" />
+          <stop offset="1" stopColor="#ad2c54" stopOpacity="0.3" />
         </linearGradient>
       </defs>
       <rect
@@ -427,8 +428,8 @@ export function BrandMark({ size = 30 }: { size?: number }) {
         width="38"
         height="38"
         rx="12"
-        fill="rgba(255,255,255,0.04)"
-        stroke="rgba(210,240,255,0.28)"
+        fill="rgba(45, 12, 28, 0.45)"
+        stroke="rgba(224, 213, 196, 0.22)"
       />
       <path
         d="M13 11h4.1l2.9 5.2 2.9-5.2H27l-5 8.8 5.3 8.2h-4.2L20 23l-3.1 5h-4.2l5.3-8.2L13 11z"
@@ -437,7 +438,7 @@ export function BrandMark({ size = 30 }: { size?: number }) {
       <path
         d="M13 11h4.1l2.9 5.2"
         stroke={`url(#${id}-b)`}
-        strokeWidth="1"
+        strokeWidth="1.25"
         strokeLinecap="round"
       />
     </svg>

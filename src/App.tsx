@@ -26,8 +26,11 @@ const Architecture = lazy(() => import("./pages/Architecture"));
 function PageLoading() {
   return (
     <div className="page-loading">
-      <span className="spinner-lg" />
-      <span className="mono">Loading range console…</span>
+      <div className="page-loading__card">
+        <BrandMark size={38} />
+        <span className="spinner-lg" />
+        <span className="mono page-loading__text">Loading range console…</span>
+      </div>
     </div>
   );
 }

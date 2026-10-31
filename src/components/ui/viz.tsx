@@ -33,9 +33,9 @@ export function Gauge({
       <svg viewBox="0 0 220 220" className="gauge__svg" aria-hidden="true">
         <defs>
           <linearGradient id={`${id}-stroke`} x1="0" y1="0" x2="1" y2="1">
-            <stop stopColor="#9fe9ff" />
-            <stop offset="0.5" stopColor="#c9f7ec" />
-            <stop offset="1" stopColor="#b8a7ff" />
+            <stop stopColor="#dfba89" />
+            <stop offset="0.5" stopColor="#a8bba4" />
+            <stop offset="1" stopColor="#ad2c54" />
           </linearGradient>
           <filter id={`${id}-glow`} x="-40%" y="-40%" width="180%" height="180%">
             <feGaussianBlur stdDeviation="3" result="blur" />
@@ -48,7 +48,7 @@ export function Gauge({
         <path
           d={`M ${cx - cos45} ${cy + cos45} A ${r} ${r} 0 1 1 ${cx + cos45} ${cy + cos45}`}
           fill="none"
-          stroke="rgba(180, 210, 235, 0.09)"
+          stroke="rgba(224, 213, 196, 0.12)"
           strokeWidth={stroke}
           strokeLinecap="round"
         />
@@ -65,13 +65,13 @@ export function Gauge({
             transition: "stroke-dashoffset 900ms cubic-bezier(0.22,0.8,0.22,1)",
           }}
         />
-        <circle cx={cx} cy={cy} r={62} fill="rgba(255,255,255,0.015)" />
+        <circle cx={cx} cy={cy} r={62} fill="rgba(247, 242, 232, 0.02)" />
         <circle
           cx={cx}
           cy={cy}
           r={62}
           fill="none"
-          stroke="rgba(190, 220, 245, 0.06)"
+          stroke="rgba(224, 213, 196, 0.08)"
         />
       </svg>
       <div className="gauge__center">
@@ -96,7 +96,7 @@ export function Sparkline({
   values,
   width = 120,
   height = 36,
-  color = "#9fe9ff",
+  color = "#a8bba4",
   fill = true,
   className,
 }: {
@@ -202,8 +202,8 @@ export function LineChart({
       >
         <defs>
           <linearGradient id={`${id}-area`} x1="0" y1="0" x2="0" y2="1">
-            <stop stopColor="#9fe9ff" stopOpacity="0.22" />
-            <stop offset="1" stopColor="#9fe9ff" stopOpacity="0" />
+            <stop stopColor="#a8bba4" stopOpacity="0.22" />
+            <stop offset="1" stopColor="#a8bba4" stopOpacity="0" />
           </linearGradient>
         </defs>
         {[0.25, 0.5, 0.75].map((ratio) => (
@@ -213,7 +213,7 @@ export function LineChart({
             x2={width}
             y1={height * ratio}
             y2={height * ratio}
-            stroke="rgba(180,210,235,0.07)"
+            stroke="rgba(224, 213, 196, 0.08)"
             strokeDasharray="2 5"
           />
         ))}
@@ -221,7 +221,7 @@ export function LineChart({
         <polyline
           points={line}
           fill="none"
-          stroke="#a9edff"
+          stroke="#a8bba4"
           strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -233,8 +233,8 @@ export function LineChart({
             cx={point.x}
             cy={point.y}
             r="2.6"
-            fill="#071018"
-            stroke="#a9edff"
+            fill="#1c0e18"
+            stroke="#a8bba4"
             strokeWidth="1.4"
           />
         ))}
@@ -306,13 +306,13 @@ export function Meter({
   value,
   max = 100,
   suffix = "%",
-  tone = "ice",
+  tone = "sage",
 }: {
   label: string;
   value: number;
   max?: number;
   suffix?: string;
-  tone?: "ice" | "violet" | "mint" | "amber" | "rose";
+  tone?: "ice" | "violet" | "mint" | "amber" | "rose" | "sage" | "burgundy" | "cream";
 }) {
   const pct = max ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   return (
