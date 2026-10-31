@@ -1,52 +1,72 @@
 /* ==========================================================================
-   Citadel design tokens
+   Citadel design tokens — Muted Sage, Warm Cream Beige & Deep Burgundy
    ========================================================================== */
 
 :root {
   color-scheme: dark;
 
-  /* Surfaces */
-  --bg-0: #04060a;
-  --bg-1: #06090f;
-  --bg-2: #090e16;
-  --bg-3: #0d141e;
+  /* Surfaces: Deep Burgundy Noir & Charcoal Slate */
+  --bg-0: #070305;
+  --bg-1: #0e060b;
+  --bg-2: #160a12;
+  --bg-3: #20101b;
 
-  --panel: rgba(13, 19, 28, 0.72);
-  --panel-solid: #0c121b;
-  --panel-raised: rgba(19, 27, 39, 0.82);
-  --panel-faint: rgba(255, 255, 255, 0.024);
+  --panel: rgba(28, 14, 23, 0.72);
+  --panel-solid: #1c0e18;
+  --panel-raised: rgba(40, 20, 33, 0.84);
+  --panel-faint: rgba(247, 242, 232, 0.03);
 
   /* Glassmorphism */
-  --glass-panel: linear-gradient(155deg, rgba(16, 25, 39, 0.68) 0%, rgba(8, 13, 21, 0.78) 100%);
-  --glass-border: 1px solid rgba(174, 199, 224, 0.12);
-  --glass-blur: blur(18px) saturate(160%);
-  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 36px -12px rgba(0, 0, 0, 0.6);
+  --glass-panel: linear-gradient(155deg, rgba(38, 18, 30, 0.68) 0%, rgba(18, 9, 15, 0.82) 100%);
+  --glass-border: 1px solid rgba(224, 213, 196, 0.14);
+  --glass-blur: blur(20px) saturate(170%);
+  --glass-shadow: inset 0 1px 0 rgba(255, 250, 240, 0.12), 0 18px 44px -12px rgba(0, 0, 0, 0.75);
 
-  /* Lines */
-  --line: rgba(174, 199, 224, 0.1);
-  --line-soft: rgba(174, 199, 224, 0.06);
-  --line-strong: rgba(186, 211, 236, 0.2);
-  --line-bright: rgba(213, 240, 255, 0.34);
+  /* Lines & Hairlines */
+  --line: rgba(224, 213, 196, 0.11);
+  --line-soft: rgba(224, 213, 196, 0.06);
+  --line-strong: rgba(224, 213, 196, 0.22);
+  --line-bright: rgba(247, 242, 232, 0.4);
+  --line-burgundy: rgba(173, 44, 84, 0.35);
+  --line-sage: rgba(155, 170, 151, 0.28);
 
-  /* Type */
-  --text: #edf3f9;
-  --text-2: #b7c4d4;
-  --muted: #8493a7;
-  --faint: #5f6c7f;
+  /* Type: Warm Cream Beige & Taupe */
+  --text: #f7f2e8;
+  --text-2: #ded5c5;
+  --muted: #a39b8c;
+  --faint: #756c60;
 
   /* Accents */
-  --ice: #a5ecff;
-  --ice-strong: #6fdcff;
-  --violet: #bcabff;
-  --mint: #97f0cc;
-  --amber: #ffd49b;
-  --rose: #ff97a4;
+  /* Muted Sage Gray */
+  --sage: #9baa97;
+  --sage-strong: #a8bba4;
+  --sage-dim: #596656;
+  --sage-glass: rgba(155, 170, 151, 0.14);
+  --mint: #a8bba4;
+  --ice: #dce3db;
+  --ice-strong: #9baa97;
+
+  /* Deep Burgundy */
+  --burgundy: #781c38;
+  --burgundy-rich: #8f2244;
+  --burgundy-bright: #ad2c54;
+  --burgundy-deep: #2d0a17;
+  --burgundy-glass: rgba(143, 34, 68, 0.25);
+  --burgundy-glow: rgba(173, 44, 84, 0.35);
+  --violet: #ad4c6c;
+  --rose: #d85d7c;
+
+  /* Warm Cream Beige */
+  --cream: #f7f2e8;
+  --cream-warm: #ede3d1;
+  --cream-gold: #dfba89;
+  --amber: #dfba89;
 
   /* Severity */
-  --critical: #ff97a4;
-  --high: #ffb98a;
-  --medium: #ffd9a3;
-  --low: #9ad9ff;
+  --critical: #d85d7c;
+  --high: #d9916d;
+  --medium: #dfba89;
+  --low: #a8bba4;
 
   /* Radii */
   --r-xs: 8px;
@@ -58,20 +78,20 @@
   --r-pill: 999px;
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 18px 40px -24px rgba(0, 0, 0, 0.9);
-  --shadow-lg: 0 42px 90px -46px rgba(0, 0, 0, 0.95);
-  --shadow-glow: 0 0 80px -18px rgba(111, 220, 255, 0.28);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 18px 40px -20px rgba(0, 0, 0, 0.9);
+  --shadow-lg: 0 42px 90px -40px rgba(0, 0, 0, 0.95);
+  --shadow-glow: 0 0 80px -18px rgba(173, 44, 84, 0.35);
 
-  --inner-hair: inset 0 1px 0 rgba(255, 255, 255, 0.09),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.22);
+  --inner-hair: inset 0 1px 0 rgba(255, 250, 240, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35);
 
   /* Type families */
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-    sans-serif;
-  --font-display: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas,
-    monospace;
+  --font-sans: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Cinzel", "Space Grotesk", Georgia, serif;
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --font-display-hero: "Cinzel", "Space Grotesk", serif;
 
   /* Motion */
   --ease: cubic-bezier(0.22, 0.8, 0.22, 1);

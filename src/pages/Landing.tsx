@@ -143,11 +143,11 @@ export default function Landing() {
             <div className="hero-fullscreen__top-tags">
               <span className="hero__eyebrow--warm">
                 <Icon name="shield-check" size={13} />
-                Mode 1 &amp; Mode 2 · Autonomous Defensive Range
+                Dual-Swarm Invariant · Sovereign Defense
               </span>
               <span className="hero-fullscreen__badge">
                 <span className="dot" />
-                Zero Network Egress · Isolated Sandbox
+                Air-Gapped Simulation Arena · Zero Host Egress
               </span>
             </div>
 
@@ -174,7 +174,7 @@ export default function Landing() {
                   className="btn--originkit-ghost"
                   transition
                 >
-                  Audit Local Codebase
+                  Remediate Codebase
                 </Button>
                 <Button
                   to="/architecture"
@@ -182,14 +182,14 @@ export default function Landing() {
                   icon="book"
                   variant="ghost"
                 >
-                  Architecture
+                  Platform Architecture
                 </Button>
               </div>
             </div>
 
             {/* Scroll down prompt */}
             <a href="#overview" className="hero-fullscreen__scroll" aria-label="Scroll to explore platform">
-              <span>Scroll to explore platform</span>
+              <span>Explore Defensive Architecture</span>
               <Icon name="chevron-down" size={14} />
             </a>
           </div>
@@ -204,28 +204,28 @@ export default function Landing() {
               <div className="hero-narrative-card__lead">
                 <span className="hero__eyebrow--warm">
                   <Icon name="shield-check" size={13} />
-                  Autonomous Defensive Cyber Range
+                  Architectural Security Governance
                 </span>
                 <h2 className="hero-narrative-card__heading">
-                  See the breach <span className="gradient-text">before it happens.</span>
+                  Preserve the boundary <span className="gradient-text">before the breach.</span>
                 </h2>
               </div>
               <p className="hero-narrative-card__sub">
-                An isolated cyber range where an offensive swarm audits your code and a defensive swarm stages,
-                patches, and proves the fix in real time. Sealed in a SHA-256 tamper-evident ledger.
+                An isolated cyber arena where autonomous swarms model adversarial exploits,
+                synthesize verified cryptographic patches, and seal defenses in an immutable audit ledger.
               </p>
               <div className="hero-narrative-card__pills">
                 <span className="hero-narrative-card__pill">
                   <Icon name="shield" size={12} />
-                  Mode 1: Closed-Loop Swarm Simulation
+                  Mode 01 · Closed-Loop Swarm Simulation
                 </span>
                 <span className="hero-narrative-card__pill">
                   <Icon name="folder" size={12} />
-                  Mode 2: Live Local Folder Auto-Remediation
+                  Mode 02 · Live Codebase Auto-Remediation
                 </span>
                 <span className="hero-narrative-card__pill">
                   <Icon name="fingerprint" size={12} />
-                  SHA-256 Cryptographic Audit Ledger
+                  Cryptographic SHA-256 Ledger Chain
                 </span>
               </div>
             </Reveal>
@@ -253,19 +253,18 @@ export default function Landing() {
         {/* ================================================================
             ORIGINKIT 3-UP FEATURE ROW WITH COLOR ACCENT BARS
             ================================================================ */}
-        <section id="features" className="section platform-section" style={{ borderTop: "1px solid #232834" }}>
+        <section id="features" className="section platform-section" style={{ borderTop: "1px solid var(--line)" }}>
           <div className="container">
             <Reveal className="section-head section-head--split">
               <div className="section-head__lead">
-                <span className="hero__eyebrow--warm">Engine Core Invariants</span>
-                <h2 className="h2" style={{ fontFamily: "var(--font-display-hero)", textTransform: "uppercase", fontSize: "clamp(2.4rem, 5vw, 3.8rem)" }}>
-                  Made for Autonomous Defense
+                <span className="hero__eyebrow--warm">Architectural Core Principles</span>
+                <h2 className="h2" style={{ fontFamily: "var(--font-display)", letterSpacing: "0.02em", fontSize: "clamp(2.2rem, 4.5vw, 3.6rem)" }}>
+                  Engineered for Resilient Defense
                 </h2>
               </div>
               <p className="lede">
-                Built from the ground up for strict educational and enterprise research.
-                Offensive analysis swarms and defensive response swarms interact inside isolated
-                sandboxes with zero external connectivity.
+                Architected from first principles for controlled educational simulation and enterprise security assurance.
+                Offensive AST audit swarms and defensive synthesis swarms interact inside isolated runtimes.
               </p>
             </Reveal>
 
@@ -274,26 +273,26 @@ export default function Landing() {
                 <span className="k" />
                 <h3>Closed-Loop Simulation</h3>
                 <p>
-                  Offensive analysis swarms probe synthetic vulnerabilities (CWE-89, CWE-295, CWE-502, CWE-489)
-                  inside an isolated mock enterprise without executing dangerous payloads.
+                  Offensive analysis agents traverse abstract syntax trees to isolate seeded vulnerabilities (CWE-89, CWE-295, CWE-502, CWE-489)
+                  inside an isolated mock enterprise with zero host exposure.
                 </p>
               </Reveal>
 
               <Reveal className="originkit-feature-card" delay={120}>
                 <span className="k" />
-                <h3>Live Folder Auto-Remediation</h3>
+                <h3>Live Workspace Remediation</h3>
                 <p>
-                  Point Citadel at your local codebase via browser AST sandbox or the local Python REST daemon.
-                  Multi-pass safe remediation automatically generates unified diffs, applies fixes, and verifies resolution.
+                  Attach your project directory to run non-destructive AST audits.
+                  Multi-pass remediation synthesizes minimal, verified unified diffs, stages changes in memory, and validates complete resolution.
                 </p>
               </Reveal>
 
               <Reveal className="originkit-feature-card" delay={200}>
                 <span className="k" />
-                <h3>Cryptographic Proof Chain</h3>
+                <h3>Cryptographic Audit Chain</h3>
                 <p>
-                  Every triage verdict, patch diff, staging test run, and rollback backup is SHA-256 chained in
-                  a tamper-evident audit ledger with human-in-the-loop governance gates.
+                  Every root-cause verdict, unified patch diff, verification suite run, and rollback state is SHA-256 chained in
+                  a tamper-evident audit ledger with human-in-the-loop approval gates.
                 </p>
               </Reveal>
             </div>
