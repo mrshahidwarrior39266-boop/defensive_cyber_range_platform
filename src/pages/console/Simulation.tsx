@@ -101,9 +101,12 @@ export default function Simulation() {
   const complete = state.status === "complete";
   const round = latestRound(state);
 
+  // Track whether operator modified the configuration after a completed campaign
+  const configModified = complete && (rounds !== state.campaignRounds || mode !== state.approvalMode);
+
   useEffect(() => {
     if (!running) return;
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    const timer = window.setInterval(() => setNow(Date.now()), 100);
     return () => window.clearInterval(timer);
   }, [running]);
 
@@ -118,7 +121,7 @@ export default function Simulation() {
       ? (state.campaignFinishedAt ?? now) - state.campaignStartedAt
       : 0;
 
-  const phase = PHASE_INDEX[state.phase] ?? -1;
+  const phase = configModified ? -1 : (PHASE_INDEX[state.phase] ?? -1);
 
   const launch = async () => {
     if (state.killSwitch.tripped) {
@@ -178,7 +181,9 @@ export default function Simulation() {
                   : "deny_all"}
             </Pill>
             <Pill icon="calendar">
-              {state.campaignRounds || rounds} rounds planned
+              {running
+                ? `${state.campaignRounds} rounds running`
+                : `${rounds} round${rounds === 1 ? "" : "s"} planned`}
             </Pill>
           </>
         }
@@ -346,44 +351,51 @@ export default function Simulation() {
           subtitle={
             running
               ? state.phaseLabel
-              : complete
-                ? "Campaign sealed · chain verified"
-                : "Awaiting campaign"
+              : configModified
+                ? `Ready to launch (${rounds} rounds · ${MODES.find((m) => m.id === mode)?.title})`
+                : complete
+                  ? "Campaign sealed · chain verified"
+                  : "Awaiting campaign"
           }
           actions={
-            <span className="live-dot" data-on={running || complete} />
+            <span className="live-dot" data-on={running || (complete && !configModified)} />
           }
         >
           <div className="campaign-live">
             <div className="campaign-live__stats">
               <div>
                 <span>Elapsed</span>
-                <b>{formatDuration(0, elapsed)}</b>
+                <b>{configModified ? "0.0s" : formatDuration(0, elapsed, running)}</b>
               </div>
               <div>
                 <span>Round</span>
                 <b>
-                  {state.activeRound || (running ? 1 : 0)} /{" "}
-                  {state.campaignRounds || rounds}
+                  {running
+                    ? `${state.activeRound || 1} / ${state.campaignRounds}`
+                    : configModified
+                      ? `0 / ${rounds}`
+                      : `${state.activeRound || (complete ? state.campaignRounds : 0)} / ${state.campaignRounds || rounds}`}
                 </b>
               </div>
               <div>
                 <span>Progress</span>
-                <b>{Math.round(state.progress * 100)}%</b>
+                <b>{configModified ? "0%" : `${Math.round(state.progress * 100)}%`}</b>
               </div>
             </div>
             <div className="campaign-live__bar">
-              <span style={{ width: `${state.progress * 100}%` }} />
+              <span style={{ width: configModified ? "0%" : `${state.progress * 100}%` }} />
             </div>
 
             <ol className="phase-list">
               {PHASE_STEPS.map((step, index) => {
                 const status =
-                  state.phase === "complete" || index < phase
-                    ? "done"
-                    : index === phase
-                      ? "active"
-                      : "queued";
+                  configModified
+                    ? "queued"
+                    : state.phase === "complete" || index < phase
+                      ? "done"
+                      : index === phase
+                        ? "active"
+                        : "queued";
                 return (
                   <li
                     key={step.key}

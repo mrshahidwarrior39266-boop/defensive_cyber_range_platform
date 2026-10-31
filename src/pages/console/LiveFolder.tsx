@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { PageHeader, Panel, Pill, SeverityPill, Stat, Button, EmptyState } from "../../components/ui/primitives";
 import { Icon } from "../../components/ui/Icon";
 import { CodeBlock, DiffView } from "../../components/ui/code";
@@ -113,6 +113,16 @@ function computeFormula(rawExpression) {
 `,
 };
 
+/**
+ * Deterministically constructs a unique finding identifier combining rule, sanitized file name, and line.
+ * Eliminates ID collisions across multiple files sharing identical line numbers or rule definitions.
+ */
+function makeFindingId(ruleId: string, filePath: string, line: number): string {
+  const baseName = filePath.split("/").pop() || filePath;
+  const cleanName = baseName.replace(/[^a-zA-Z0-9]/g, "-").replace(/^-+|-+$/g, "").toLowerCase();
+  return `LF-${ruleId}-${cleanName}-L${line}`;
+}
+
 function runInBrowserScan(files: Record<string, string>): {
   findings: LiveFinding[];
   durationMs: number;
@@ -137,7 +147,7 @@ function runInBrowserScan(files: Record<string, string>): {
         );
 
         findings.push({
-          id: `LF-SQLI-${lineNum}`,
+          id: makeFindingId("PY-SQLI-001", filePath, lineNum),
           rule_id: "PY-SQLI-001",
           title: "SQL injection via string interpolation",
           severity: "CRITICAL",
@@ -163,7 +173,7 @@ function runInBrowserScan(files: Record<string, string>): {
       if (filePath.endsWith(".py") && /verify\s*=\s*False/i.test(line)) {
         const patchedContent = files[filePath].replace(/verify\s*=\s*False/g, "verify=True");
         findings.push({
-          id: `LF-TLS-${lineNum}`,
+          id: makeFindingId("PY-TLS-001", filePath, lineNum),
           rule_id: "PY-TLS-001",
           title: "TLS certificate verification disabled",
           severity: "HIGH",
@@ -189,7 +199,7 @@ function runInBrowserScan(files: Record<string, string>): {
       if (filePath.endsWith(".py") && /yaml\.load\s*\(/i.test(line) && !/SafeLoader/i.test(line)) {
         const patchedContent = files[filePath].replace(/yaml\.load\s*\(/g, "yaml.safe_load(");
         findings.push({
-          id: `LF-YAML-${lineNum}`,
+          id: makeFindingId("PY-YAML-001", filePath, lineNum),
           rule_id: "PY-YAML-001",
           title: "Unsafe YAML load without safe loader",
           severity: "HIGH",
@@ -218,7 +228,7 @@ function runInBrowserScan(files: Record<string, string>): {
           .replace(/DEBUG\s*=\s*True/g, "DEBUG = False")
           .replace(/EXPOSE_STACK_TRACES\s*=\s*True/g, "EXPOSE_STACK_TRACES = False");
         findings.push({
-          id: `LF-DEBUG-${lineNum}`,
+          id: makeFindingId("PY-DEBUG-001", filePath, lineNum),
           rule_id: "PY-DEBUG-001",
           title: "Production debug or stack trace exposure enabled",
           severity: "MEDIUM",
@@ -247,7 +257,7 @@ function runInBrowserScan(files: Record<string, string>): {
           'def delete_user_record(requester_role, target_user_id):\n    if requester_role != "admin":\n        raise PermissionError("Access denied: admin role required")\n    return {"deleted": target_user_id, "status": "success"}'
         );
         findings.push({
-          id: `LF-AUTH-${lineNum}`,
+          id: makeFindingId("PY-AUTH-001", filePath, lineNum),
           rule_id: "PY-AUTH-001",
           title: "Missing authorization check on privileged handler",
           severity: "HIGH",
@@ -276,7 +286,7 @@ function runInBrowserScan(files: Record<string, string>): {
           'safe_name = html.escape(username, quote=True)\n    return f"<div class=\'profile\'>Welcome back, {safe_name}!</div>"'
         );
         findings.push({
-          id: `LF-XSS-${lineNum}`,
+          id: makeFindingId("PY-XSS-001", filePath, lineNum),
           rule_id: "PY-XSS-001",
           title: "Reflected HTML Cross-Site Scripting (XSS)",
           severity: "MEDIUM",
@@ -302,7 +312,7 @@ function runInBrowserScan(files: Record<string, string>): {
       if (/rejectUnauthorized\s*:\s*false/i.test(line)) {
         const patchedContent = files[filePath].replace(/rejectUnauthorized\s*:\s*false/g, "rejectUnauthorized: true");
         findings.push({
-          id: `LF-JSTLS-${lineNum}`,
+          id: makeFindingId("JS-TLS-001", filePath, lineNum),
           rule_id: "JS-TLS-001",
           title: "TLS rejectUnauthorized disabled in HTTPS agent",
           severity: "HIGH",
@@ -327,7 +337,7 @@ function runInBrowserScan(files: Record<string, string>): {
       // JS-CMD-001 (CWE-78)
       if (/exec\s*\(\s*['"]ping/i.test(line) && /\+\s*[a-zA-Z0-9_]+/i.test(line)) {
         findings.push({
-          id: `LF-JSCMD-${lineNum}`,
+          id: makeFindingId("JS-CMD-001", filePath, lineNum),
           rule_id: "JS-CMD-001",
           title: "Shell command constructed from dynamic input",
           severity: "HIGH",
@@ -346,7 +356,7 @@ function runInBrowserScan(files: Record<string, string>): {
       // CFG-SECRET-001 (CWE-798)
       if (/(API_SECRET_KEY|TOKEN_SIGNING_SECRET)\s*=\s*["'][^"']+["']/i.test(line)) {
         findings.push({
-          id: `LF-SECRET-${lineNum}`,
+          id: makeFindingId("CFG-SECRET-001", filePath, lineNum),
           rule_id: "CFG-SECRET-001",
           title: "Hardcoded secret key in source code",
           severity: "HIGH",
@@ -376,9 +386,25 @@ export default function LiveFolder() {
   const [workspaceFiles, setWorkspaceFiles] = useState<Record<string, string>>(PRESET_ACME);
   const [selectedFile, setSelectedFile] = useState<string>("database.py");
 
+  // Connection & Daemon State
   const [agentConnected, setAgentConnected] = useState<boolean>(false);
   const [agentAllowWrite, setAgentAllowWrite] = useState<boolean>(false);
   const [localFolderPath, setLocalFolderPath] = useState<string>("defensive_cyber_range/simulation_artifacts/workspace");
+  const [daemonUrl, setDaemonUrl] = useState<string>("http://127.0.0.1:8765");
+  const [isTestingDaemon, setIsTestingDaemon] = useState<boolean>(false);
+  const [daemonTestResult, setDaemonTestResult] = useState<{
+    tested: boolean;
+    online: boolean;
+    latencyMs?: number;
+    message?: string;
+  }>({ tested: false, online: false });
+
+  // Import Drawer State
+  const [isImportDrawerOpen, setIsImportDrawerOpen] = useState<boolean>(false);
+  const [importTab, setImportTab] = useState<"browser" | "daemon" | "presets">("browser");
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [isRemediating, setIsRemediating] = useState<boolean>(false);
 
@@ -406,7 +432,7 @@ export default function LiveFolder() {
       try {
         const ctrl = new AbortController();
         const timeout = setTimeout(() => ctrl.abort(), 900);
-        const res = await fetch("http://127.0.0.1:8765/healthz", { signal: ctrl.signal });
+        const res = await fetch(`${daemonUrl.replace(/\/+$/, "")}/healthz`, { signal: ctrl.signal });
         clearTimeout(timeout);
         if (!unmounted && res.ok) {
           const data = await res.json();
@@ -423,7 +449,7 @@ export default function LiveFolder() {
     return () => {
       unmounted = true;
     };
-  }, []);
+  }, [daemonUrl]);
 
   // Trigger initial scan when preset or files change
   const executeScan = useCallback((filesToScan: Record<string, string>) => {
@@ -433,7 +459,7 @@ export default function LiveFolder() {
       setFindings(result.findings);
       setScanElapsedMs(result.durationMs);
       setIsScanning(false);
-    }, 150);
+    }, 120);
   }, []);
 
   useEffect(() => {
@@ -456,16 +482,88 @@ export default function LiveFolder() {
     });
   };
 
+  // Browser directory picker with graceful fallback & strong failure UX
+  const handlePickDirectory = async () => {
+    setImportError(null);
+    const ALLOWED_EXTS = [".py", ".js", ".ts", ".jsx", ".tsx", ".json", ".yaml", ".yml", ".sql", ".sh", ".env"];
+    const IGNORED_DIRS = [".git", "node_modules", "__pycache__", ".venv", "venv", "dist", "build", ".next", ".vercel"];
+
+    if ("showDirectoryPicker" in window) {
+      try {
+        // @ts-expect-error standard File System Access API
+        const dirHandle = await window.showDirectoryPicker();
+        const files: Record<string, string> = {};
+
+        async function scanDir(handle: any, pathPrefix = "") {
+          for await (const entry of handle.values()) {
+            if (entry.kind === "directory") {
+              if (!IGNORED_DIRS.includes(entry.name)) {
+                await scanDir(entry, `${pathPrefix}${entry.name}/`);
+              }
+            } else if (entry.kind === "file") {
+              const hasAllowedExt = ALLOWED_EXTS.some((ext) => entry.name.toLowerCase().endsWith(ext));
+              if (hasAllowedExt) {
+                const file = await entry.getFile();
+                if (file.size <= 500000) {
+                  const text = await file.text();
+                  files[`${pathPrefix}${entry.name}`] = text;
+                }
+              }
+            }
+          }
+        }
+
+        await scanDir(dirHandle);
+
+        if (Object.keys(files).length === 0) {
+          setImportError("No supported source files (.py, .js, .ts, .json, .yaml, .sql) were found in the selected folder.");
+          return;
+        }
+
+        setWorkspaceFiles(files);
+        setSelectedFile(Object.keys(files)[0]);
+        setRemediationSummary(null);
+        setRemediationLogs([]);
+        setIsImportDrawerOpen(false);
+        push({
+          title: "Workspace Imported",
+          message: `Imported ${Object.keys(files).length} files from ${dirHandle.name}.`,
+          tone: "success",
+        });
+      } catch (err: any) {
+        if (err.name === "AbortError") {
+          return; // Operator cancelled
+        }
+        if (err.name === "NotAllowedError" || err.name === "SecurityError") {
+          setImportError("Permission to read local folder was denied by your browser. You can grant access or use the Citadel Python Daemon below.");
+        } else {
+          setImportError(`Directory picker unavailable: ${err.message || String(err)}. Falling back to file input.`);
+          fileInputRef.current?.click();
+        }
+      }
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setImportError(null);
     const uploaded = event.target.files;
     if (!uploaded || uploaded.length === 0) return;
 
     const newFiles: Record<string, string> = {};
     const readers: Promise<void>[] = [];
+    const ALLOWED_EXTS = [".py", ".js", ".ts", ".jsx", ".tsx", ".json", ".yaml", ".yml", ".sql", ".sh", ".env"];
 
     Array.from(uploaded).forEach((file) => {
       if (file.size > 500000) return; // skip >500kb
       const relative = file.webkitRelativePath || file.name;
+      if (relative.includes(".git/") || relative.includes("node_modules/") || relative.includes("__pycache__/")) {
+        return;
+      }
+      const hasAllowedExt = ALLOWED_EXTS.some((ext) => relative.toLowerCase().endsWith(ext));
+      if (!hasAllowedExt) return;
+
       const promise = new Promise<void>((resolve) => {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -474,24 +572,75 @@ export default function LiveFolder() {
           }
           resolve();
         };
+        reader.onerror = () => resolve();
         reader.readAsText(file);
       });
       readers.push(promise);
     });
 
     Promise.all(readers).then(() => {
-      if (Object.keys(newFiles).length > 0) {
-        setWorkspaceFiles(newFiles);
-        setSelectedFile(Object.keys(newFiles)[0]);
-        setRemediationSummary(null);
-        setRemediationLogs([]);
+      if (Object.keys(newFiles).length === 0) {
+        setImportError("No supported source files found in uploaded batch. Citadel scans .py, .js, .ts, .json, .yaml files.");
+        return;
+      }
+      setWorkspaceFiles(newFiles);
+      setSelectedFile(Object.keys(newFiles)[0]);
+      setRemediationSummary(null);
+      setRemediationLogs([]);
+      setIsImportDrawerOpen(false);
+      push({
+        title: "Files Loaded",
+        message: `Imported ${Object.keys(newFiles).length} files into live scanner sandbox.`,
+        tone: "success",
+      });
+    });
+  };
+
+  const handleTestDaemon = async () => {
+    setIsTestingDaemon(true);
+    const t0 = performance.now();
+    try {
+      const ctrl = new AbortController();
+      const timeout = setTimeout(() => ctrl.abort(), 2200);
+      const target = `${daemonUrl.replace(/\/+$/, "")}/healthz`;
+      const res = await fetch(target, { signal: ctrl.signal });
+      clearTimeout(timeout);
+      const latency = Math.round(performance.now() - t0);
+
+      if (res.ok) {
+        const data = await res.json();
+        setAgentConnected(true);
+        setAgentAllowWrite(Boolean(data.allow_write));
+        setDaemonTestResult({
+          tested: true,
+          online: true,
+          latencyMs: latency,
+          message: `Connected (${latency}ms). Root: ${data.root || "active workspace"} · ${data.allow_write ? "Read/Write" : "Read-only"}`,
+        });
         push({
-          title: "Files Loaded",
-          message: `Imported ${Object.keys(newFiles).length} files into live scanner sandbox.`,
+          title: "Daemon Online",
+          message: `Citadel Live Daemon connected at ${daemonUrl} (${latency}ms).`,
           tone: "success",
         });
+      } else {
+        setAgentConnected(false);
+        setDaemonTestResult({
+          tested: true,
+          online: false,
+          latencyMs: latency,
+          message: `Daemon returned HTTP ${res.status}: ${res.statusText}`,
+        });
       }
-    });
+    } catch {
+      setAgentConnected(false);
+      setDaemonTestResult({
+        tested: true,
+        online: false,
+        message: `Cannot reach ${daemonUrl}. Make sure the Python daemon is running in your terminal.`,
+      });
+    } finally {
+      setIsTestingDaemon(false);
+    }
   };
 
   // Apply single patch
@@ -529,7 +678,6 @@ export default function LiveFolder() {
       const candidate = currentFindings.find((f) => f.safe_auto && f.patch);
       if (!candidate || !candidate.patch) break;
 
-      // Apply patch in sandbox
       currentFiles = {
         ...currentFiles,
         [candidate.file_path]: candidate.patch.patched_content,
@@ -548,7 +696,6 @@ export default function LiveFolder() {
         backup_path: backupPath,
       });
 
-      // Verification re-scan
       const reScan = runInBrowserScan(currentFiles);
       currentFindings = reScan.findings;
     }
@@ -607,20 +754,16 @@ export default function LiveFolder() {
         title="Live Folder Remediation"
         description="Connect a local project folder to audit source code for vulnerabilities, review unified patch diffs, and execute safe multi-pass automated remediation loops with rollback protection."
         actions={
-          <div className="row gap-8">
-            <label className="btn btn--quiet btn--sm" style={{ cursor: "pointer" }}>
-              <Icon name="upload" size={13} />
-              <span>Import Local Folder</span>
-              <input
-                type="file"
-                // @ts-expect-error webkitdirectory is standard in Chromium/Firefox/Safari
-                webkitdirectory=""
-                directory=""
-                multiple
-                style={{ display: "none" }}
-                onChange={handleFileUpload}
-              />
-            </label>
+          <div className="live-head-actions row gap-8">
+            <Button
+              variant="quiet"
+              size="sm"
+              icon="upload"
+              onClick={() => setIsImportDrawerOpen(true)}
+            >
+              <span className="btn-label-desktop">Import / Connect Folder</span>
+              <span className="btn-label-mobile">Import</span>
+            </Button>
             <Button
               variant="primary"
               size="sm"
@@ -628,11 +771,32 @@ export default function LiveFolder() {
               disabled={isScanning || isRemediating || autoFixableCount === 0}
               onClick={runClosedLoopRemediation}
             >
-              {isRemediating ? "Remediating…" : "Run Auto-Remediation Loop"}
+              <span className="btn-label-desktop">
+                {isRemediating ? "Remediating…" : "Run Auto-Remediation Loop"}
+              </span>
+              <span className="btn-label-mobile">
+                {isRemediating ? "Fixing…" : "Auto-Fix Loop"}
+              </span>
             </Button>
           </div>
         }
       />
+
+      {/* Mode 2 Isolation Guarantee Banner */}
+      <div className="banner" style={{ background: "rgba(100, 200, 255, 0.05)", borderColor: "rgba(100, 200, 255, 0.2)" }}>
+        <div className="banner__icon" style={{ background: "rgba(100, 200, 255, 0.12)", color: "var(--ice)" }}>
+          <Icon name="layers" size={16} />
+        </div>
+        <div>
+          <div className="row spread align-center">
+            <b style={{ color: "var(--ice)" }}>Mode 2 · Dedicated Local Codebase Engine</b>
+            <Pill tone="live">ISOLATED FROM MODE 1 RANGE</Pill>
+          </div>
+          <p style={{ color: "var(--muted)", fontSize: 12, marginTop: 4 }}>
+            Live Folder audits local repositories or isolated sandbox presets. Remediations here target source files on disk and do not alter the synthetic AcmeCorp simulation ledger in Mission Control.
+          </p>
+        </div>
+      </div>
 
       {/* Connectivity & Daemon Status Banner */}
       <div className={cn("glass-banner", agentConnected ? "glass-banner--success" : "glass-banner--info")}>
@@ -644,7 +808,7 @@ export default function LiveFolder() {
             <span className="glass-banner__title">
               {agentConnected
                 ? `Local Live Daemon Connected (127.0.0.1:8765) · ${agentAllowWrite ? "Read/Write Active" : "Read-Only Mode"}`
-                : "In-Browser Sandbox Mode (Interactive Simulation & Real-Time AST Engine Active)"}
+                : "In-Browser Sandbox Mode (Interactive AST Engine Active)"}
             </span>
             <Pill tone={agentConnected ? "live" : "neutral"}>
               {agentConnected ? "DAEMON CONNECTED" : "WEB SANDBOX"}
@@ -653,7 +817,7 @@ export default function LiveFolder() {
           <p className="glass-banner__desc">
             {agentConnected
               ? "All actions execute directly against your local workspace through the loopback REST daemon."
-              : "To connect your real local hard drive files, run `python -m live.server --root /path/to/project --allow-write` in your terminal."}
+              : "Running in client-side sandbox. For live disk write-backs and atomic git commits, launch the local Python daemon or import a folder."}
           </p>
           {agentConnected && (
             <div className="row gap-8 align-center" style={{ marginTop: 8 }}>
@@ -674,7 +838,7 @@ export default function LiveFolder() {
 
       {/* Preset Selector & Workspace Tabs */}
       <div className="workspace-tabs-row row spread align-center">
-        <div className="row gap-8 align-center">
+        <div className="workspace-tabs-group row gap-8 align-center flex-wrap">
           <span className="label-sm">Sandbox Presets:</span>
           <Button
             size="sm"
@@ -904,10 +1068,21 @@ export default function LiveFolder() {
                     }}
                   >
                     <div className="finding-card__header row spread align-center">
-                      <div className="row gap-8 align-center">
+                      <div className="row gap-8 align-center flex-wrap">
                         <SeverityPill severity={finding.severity} />
+                        <span
+                          className="mono text-xs font-semibold text-ice"
+                          style={{
+                            background: "rgba(255, 255, 255, 0.06)",
+                            padding: "2px 7px",
+                            borderRadius: 4,
+                            border: "1px solid rgba(255, 255, 255, 0.1)",
+                          }}
+                          title={`Unique Finding ID: ${finding.id}`}
+                        >
+                          {finding.id}
+                        </span>
                         <span className="mono text-xs text-muted">{finding.cwe}</span>
-                        <span className="mono text-xs font-semibold">{finding.rule_id}</span>
                       </div>
                       <Pill tone={finding.safe_auto ? "live" : "medium"}>
                         {finding.safe_auto ? "AUTO-FIX" : "MANUAL"}
@@ -953,13 +1128,289 @@ export default function LiveFolder() {
         </div>
       </div>
 
+      {/* Connect & Import Workspace Drawer */}
+      <Drawer
+        open={isImportDrawerOpen}
+        onClose={() => setIsImportDrawerOpen(false)}
+        title="Connect & Import Local Workspace"
+        eyebrow="Mode 2 Codebase Connector"
+        subtitle="Choose how Citadel connects to your project source files"
+        width={620}
+        footer={
+          <div className="row spread align-center" style={{ width: "100%" }}>
+            <span className="mono text-xs text-muted">
+              Supported: .py, .js, .ts, .json, .yaml, .sql
+            </span>
+            <Button variant="quiet" size="sm" onClick={() => setIsImportDrawerOpen(false)}>
+              Close
+            </Button>
+          </div>
+        }
+      >
+        <div className="col gap-16">
+          {/* Hidden HTML5 File Input for cross-browser fallback */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            // @ts-expect-error webkitdirectory is standard across Chromium, WebKit, and Gecko
+            webkitdirectory=""
+            directory=""
+            multiple
+            style={{ display: "none" }}
+            onChange={handleFileUpload}
+          />
+
+          {/* Import Modes Tabs */}
+          <div className="row gap-8" style={{ borderBottom: "1px solid var(--line-strong)", paddingBottom: 10 }}>
+            <Button
+              size="sm"
+              variant={importTab === "browser" ? "primary" : "quiet"}
+              icon="folder"
+              onClick={() => {
+                setImportTab("browser");
+                setImportError(null);
+              }}
+            >
+              Browser Folder Picker
+            </Button>
+            <Button
+              size="sm"
+              variant={importTab === "daemon" ? "primary" : "quiet"}
+              icon="terminal"
+              onClick={() => {
+                setImportTab("daemon");
+                setImportError(null);
+              }}
+            >
+              Local Python Daemon
+            </Button>
+            <Button
+              size="sm"
+              variant={importTab === "presets" ? "primary" : "quiet"}
+              icon="box"
+              onClick={() => {
+                setImportTab("presets");
+                setImportError(null);
+              }}
+            >
+              Security Presets
+            </Button>
+          </div>
+
+          {/* Error Banner if any */}
+          {importError && (
+            <div className="banner banner--danger">
+              <div className="banner__icon">
+                <Icon name="alert" size={16} />
+              </div>
+              <div>
+                <b>Import Notice</b>
+                <p>{importError}</p>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 1: BROWSER FOLDER PICKER */}
+          {importTab === "browser" && (
+            <div className="col gap-12">
+              <div className="callout callout--info">
+                <span className="callout__title">Direct Browser Sandbox (No Server Required)</span>
+                <p>
+                  Read your local project directory into the in-memory AST engine without sending files across the network. All analysis and patch diffing runs entirely inside your browser.
+                </p>
+              </div>
+
+              <div
+                style={{
+                  border: "2px dashed var(--line-strong)",
+                  borderRadius: 12,
+                  padding: "24px 16px",
+                  textAlign: "center",
+                  background: "rgba(255,255,255,0.02)",
+                }}
+              >
+                <span style={{ color: "var(--ice)", display: "inline-block", marginBottom: 12 }}>
+                  <Icon name="folder" size={32} />
+                </span>
+                <h4 style={{ margin: "0 0 6px" }}>Select a Project Directory</h4>
+                <p className="text-sm text-muted" style={{ margin: "0 0 16px", maxWidth: 440, marginLeft: "auto", marginRight: "auto" }}>
+                  Citadel will scan for vulnerabilities across Python, JavaScript, TypeScript, and configuration files. Ignored: <code>node_modules</code>, <code>.git</code>, <code>venv</code>.
+                </p>
+                <div className="row gap-12 justify-center">
+                  <Button
+                    variant="primary"
+                    size="md"
+                    icon="folder"
+                    onClick={handlePickDirectory}
+                  >
+                    Choose Directory
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    icon="upload"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    File Input Fallback
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: LOCAL PYTHON DAEMON */}
+          {importTab === "daemon" && (
+            <div className="col gap-12">
+              <div className="callout callout--info">
+                <span className="callout__title">Citadel Local Daemon (Full Two-Way File Access)</span>
+                <p>
+                  For continuous automatic fixes written straight back to your hard drive with atomic backups and AST verification, run the local Citadel background daemon.
+                </p>
+              </div>
+
+              <div className="col gap-8">
+                <span className="label-sm">1. Run daemon in your project terminal:</span>
+                <div
+                  className="mono text-xs"
+                  style={{
+                    background: "rgba(0,0,0,0.4)",
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    border: "1px solid var(--line-strong)",
+                    userSelect: "all",
+                  }}
+                >
+                  python -m defensive_cyber_range.live.server --root . --port 8765 --allow-write
+                </div>
+              </div>
+
+              <div className="col gap-8">
+                <span className="label-sm">2. Daemon Endpoint URL:</span>
+                <div className="row gap-8">
+                  <input
+                    className="input text-xs mono"
+                    style={{ flex: 1 }}
+                    value={daemonUrl}
+                    onChange={(e) => setDaemonUrl(e.target.value)}
+                    placeholder="http://127.0.0.1:8765"
+                  />
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon="refresh"
+                    disabled={isTestingDaemon}
+                    onClick={handleTestDaemon}
+                  >
+                    {isTestingDaemon ? "Pinging…" : "Test Connection"}
+                  </Button>
+                </div>
+              </div>
+
+              {daemonTestResult.tested && (
+                <div
+                  className={cn(
+                    "banner",
+                    daemonTestResult.online ? "glass-banner--success" : "banner--danger"
+                  )}
+                  style={{ padding: "10px 14px" }}
+                >
+                  <div className="banner__icon">
+                    <Icon name={daemonTestResult.online ? "check-circle" : "alert"} size={16} />
+                  </div>
+                  <div>
+                    <b>{daemonTestResult.online ? "Daemon Connected" : "Connection Failed"}</b>
+                    <p>{daemonTestResult.message}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: SECURITY TEST PRESETS */}
+          {importTab === "presets" && (
+            <div className="col gap-12">
+              <p className="text-sm text-muted">
+                Quickly explore vulnerability archetypes using verified synthetic test suites:
+              </p>
+              <div className="col gap-8">
+                <div
+                  style={{
+                    border: "1px solid var(--line-strong)",
+                    borderRadius: 10,
+                    padding: "12px 14px",
+                    cursor: "pointer",
+                    background: activePreset === "acme" ? "rgba(100, 200, 255, 0.08)" : "transparent",
+                  }}
+                  onClick={() => {
+                    handleSelectPreset("acme");
+                    setIsImportDrawerOpen(false);
+                  }}
+                >
+                  <div className="row spread align-center">
+                    <b>AcmeCorp Microservice (Python)</b>
+                    <Pill tone="live">3 FILES</Pill>
+                  </div>
+                  <p className="text-xs text-muted" style={{ margin: "4px 0 0" }}>
+                    CWE-89 (SQL Injection), CWE-862 (Missing Authorization), CWE-79 (Reflected XSS), CWE-489 (Active Debug Mode).
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    border: "1px solid var(--line-strong)",
+                    borderRadius: 10,
+                    padding: "12px 14px",
+                    cursor: "pointer",
+                    background: activePreset === "gateway" ? "rgba(100, 200, 255, 0.08)" : "transparent",
+                  }}
+                  onClick={() => {
+                    handleSelectPreset("gateway");
+                    setIsImportDrawerOpen(false);
+                  }}
+                >
+                  <div className="row spread align-center">
+                    <b>Cloud Gateway (Python/YAML)</b>
+                    <Pill tone="medium">2 FILES</Pill>
+                  </div>
+                  <p className="text-xs text-muted" style={{ margin: "4px 0 0" }}>
+                    CWE-295 (TLS Verification Bypass), CWE-502 (Unsafe YAML Load), CWE-798 (Hardcoded API Secret).
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    border: "1px solid var(--line-strong)",
+                    borderRadius: 10,
+                    padding: "12px 14px",
+                    cursor: "pointer",
+                    background: activePreset === "node" ? "rgba(100, 200, 255, 0.08)" : "transparent",
+                  }}
+                  onClick={() => {
+                    handleSelectPreset("node");
+                    setIsImportDrawerOpen(false);
+                  }}
+                >
+                  <div className="row spread align-center">
+                    <b>Express API (Node.js)</b>
+                    <Pill tone="neutral">1 FILE</Pill>
+                  </div>
+                  <p className="text-xs text-muted" style={{ margin: "4px 0 0" }}>
+                    CWE-78 (Shell Command Injection), CWE-295 (Insecure RejectUnauthorized TLS), CWE-95 (Eval Execution).
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </Drawer>
+
       {/* Diff Drawer Modal */}
       {diffDrawerFinding && diffDrawerFinding.patch && (
         <Drawer
           open={Boolean(diffDrawerFinding)}
           onClose={() => setDiffDrawerFinding(null)}
           title={`Remediation Diff: ${diffDrawerFinding.rule_id}`}
-          eyebrow={diffDrawerFinding.cwe}
+          eyebrow={`${diffDrawerFinding.cwe} · ${diffDrawerFinding.id}`}
           subtitle={`Automated safe transformation for ${diffDrawerFinding.file_path}`}
           width={640}
           footer={

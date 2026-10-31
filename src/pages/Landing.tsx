@@ -195,8 +195,8 @@ export default function Landing() {
               <span className="hero__tag hero__tag--br">
                 ledger // {String(auditCount).padStart(2, "0")} sealed
               </span>
-              <span className="hero__drag">
-                <Icon name="target" size={11} /> drag to orient
+              <span className="hero__drag" title="Interactive WebGL 2.0 glass refraction shader · Auto-scales quality on constrained devices">
+                <Icon name="target" size={11} /> drag to orient · WebGL 2.0
               </span>
             </div>
 

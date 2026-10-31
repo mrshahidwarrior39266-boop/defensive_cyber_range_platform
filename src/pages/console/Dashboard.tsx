@@ -227,6 +227,25 @@ export default function Dashboard() {
         </div>
       )}
 
+      <div className="glass-banner glass-banner--info" style={{ marginBottom: 20 }}>
+        <div className="glass-banner__icon">
+          <Icon name="target" size={16} />
+        </div>
+        <div className="glass-banner__content">
+          <div className="row spread align-center" style={{ flexWrap: "wrap", gap: 8 }}>
+            <span className="glass-banner__title">
+              Mode 1: Synthetic Simulation Active · AcmeCorp Enterprise
+            </span>
+            <Button to="/console/live" variant="quiet" size="sm" iconRight="arrow-right">
+              Switch to Mode 2: Live Folder
+            </Button>
+          </div>
+          <p className="glass-banner__desc">
+            You are viewing the disposable synthetic enterprise range. To audit and auto-remediate an independent codebase or connected local project folder, switch to Mode 2.
+          </p>
+        </div>
+      </div>
+
       <div className="dash__top">
         <section className="panel posture-card">
           <div className="posture-card__glow" aria-hidden="true" />

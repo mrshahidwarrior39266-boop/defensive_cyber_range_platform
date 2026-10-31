@@ -25,7 +25,7 @@ const NAV_GROUPS: Array<{
   items: Array<{ to: string; label: string; icon: IconName; end?: boolean }>;
 }> = [
   {
-    label: "Operations",
+    label: "Mode 1 · Synthetic Range",
     items: [
       { to: "/console", label: "Mission control", icon: "gauge", end: true },
       {
@@ -33,23 +33,23 @@ const NAV_GROUPS: Array<{
         label: "Campaign runner",
         icon: "play-circle",
       },
+      { to: "/console/findings", label: "Range findings", icon: "scan" },
+      { to: "/console/incidents", label: "Incident response", icon: "git-branch" },
+      { to: "/console/enterprise", label: "Mock enterprise", icon: "server" },
+    ],
+  },
+  {
+    label: "Mode 2 · Live Codebase",
+    items: [
       {
         to: "/console/live",
-        label: "Live folder mode",
+        label: "Live folder remediation",
         icon: "folder",
       },
     ],
   },
   {
-    label: "Security",
-    items: [
-      { to: "/console/findings", label: "Findings", icon: "scan" },
-      { to: "/console/incidents", label: "Incidents", icon: "git-branch" },
-      { to: "/console/enterprise", label: "Mock enterprise", icon: "server" },
-    ],
-  },
-  {
-    label: "Governance",
+    label: "Governance & Specs",
     items: [
       { to: "/console/memory", label: "Shared memory", icon: "database" },
       { to: "/console/safety", label: "Safety & audit", icon: "fingerprint" },
@@ -173,6 +173,7 @@ function Sidebar({
   const { state } = useRange();
   const pending = pendingApprovals(state).length;
   const location = useLocation();
+  const isLiveMode = location.pathname.startsWith("/console/live");
 
   useEffect(() => {
     onClose();
@@ -204,17 +205,31 @@ function Sidebar({
           </button>
         </div>
 
-        <Link to="/console/enterprise" className="workspace-card">
-          <div className="workspace-card__top">
-            <span className="lab">Workspace</span>
-            <Icon name="chevron-right" size={12} />
-          </div>
-          <div className="workspace-card__name">AcmeCorp Internal Portal</div>
-          <div className="workspace-card__meta">
-            <span className="mono">v1.0.0-vulnerable</span>
-            <span className="tag">SEEDED</span>
-          </div>
-        </Link>
+        {isLiveMode ? (
+          <Link to="/console/live" className="workspace-card workspace-card--live">
+            <div className="workspace-card__top">
+              <span className="lab" style={{ color: "var(--ice)" }}>Mode 2 · Live Codebase</span>
+              <Icon name="chevron-right" size={12} />
+            </div>
+            <div className="workspace-card__name">Local Codebase Engine</div>
+            <div className="workspace-card__meta">
+              <span className="mono">Interactive Target</span>
+              <span className="tag tag--live">STANDALONE</span>
+            </div>
+          </Link>
+        ) : (
+          <Link to="/console/enterprise" className="workspace-card">
+            <div className="workspace-card__top">
+              <span className="lab">Mode 1 · Synthetic Range</span>
+              <Icon name="chevron-right" size={12} />
+            </div>
+            <div className="workspace-card__name">AcmeCorp Internal Portal</div>
+            <div className="workspace-card__meta">
+              <span className="mono">v1.0.0-vulnerable</span>
+              <span className="tag">SEEDED MOCK</span>
+            </div>
+          </Link>
+        )}
 
         <nav className="sidebar__nav" aria-label="Console">
           {NAV_GROUPS.map((group) => (
@@ -298,6 +313,7 @@ export function ConsoleLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { state } = useRange();
   const location = useLocation();
+  const isLiveMode = location.pathname.startsWith("/console/live");
   const title = ROUTE_TITLES[location.pathname] ?? "Console";
   const posture = state.rounds.length
     ? state.rounds[state.rounds.length - 1].scorecard.securityPostureScore
@@ -332,6 +348,10 @@ export function ConsoleLayout() {
             <div className="topbar__crumb">
               <span>Console</span>
               <Icon name="chevron-right" size={11} />
+              <span className="topbar__mode-badge mono">
+                {isLiveMode ? "Mode 2: Codebase" : "Mode 1: Range"}
+              </span>
+              <Icon name="chevron-right" size={11} />
               <b>{title}</b>
             </div>
           </div>
@@ -349,13 +369,14 @@ export function ConsoleLayout() {
             <KillSwitchControl />
             <Link
               to="/"
-              className="btn--icon topbar__site"
-              aria-label="View public site"
-              title="Public site"
+              className="topbar__site-btn"
+              aria-label="View public site overview"
+              title="Return to Public Site"
             >
-              <Icon name="external" size={15} />
+              <Icon name="external" size={13} />
+              <span>Public site</span>
             </Link>
-            <span className="topbar__avatar">RO</span>
+            <span className="topbar__avatar" title="Range Operator session">RO</span>
           </div>
         </header>
 

@@ -57,11 +57,17 @@ export function relativeTime(value: number | string) {
   return `${days}d ago`;
 }
 
-export function formatDuration(from: number, to: number) {
-  const seconds = Math.max(0, Math.round((to - from) / 1000));
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  const rest = seconds % 60;
+export function formatDuration(from: number, to: number, highPrecision = false) {
+  const delta = Math.max(0, to - from);
+  const totalSeconds = delta / 1000;
+  if (totalSeconds < 60) {
+    if (highPrecision) {
+      return `${totalSeconds.toFixed(1)}s`;
+    }
+    return `${Math.floor(totalSeconds)}s`;
+  }
+  const minutes = Math.floor(totalSeconds / 60);
+  const rest = Math.floor(totalSeconds % 60);
   return `${minutes}m ${rest}s`;
 }
 

@@ -9,5 +9,7 @@ __pycache__
 *.pyo
 .cyberrange/backups/
 .vercel
-
-.vercel
+.agents/
+.cloud-attachments/
+cyber_range_test_samples*
+skills-lock.json

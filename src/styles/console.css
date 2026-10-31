@@ -761,3 +761,68 @@
     justify-content: flex-start;
   }
 }
+
+/* Mode-Aware Workspace Card & Topbar Additions */
+.workspace-card--live {
+  border-color: rgba(96, 200, 245, 0.32);
+  background: linear-gradient(
+    150deg,
+    rgba(96, 200, 245, 0.09) 0%,
+    rgba(6, 12, 19, 0.8) 100%
+  );
+}
+
+.workspace-card--live:hover {
+  border-color: rgba(96, 200, 245, 0.55);
+}
+
+.tag--live {
+  background: rgba(96, 200, 245, 0.16) !important;
+  color: var(--ice) !important;
+  border: 1px solid rgba(96, 200, 245, 0.35) !important;
+}
+
+.topbar__mode-badge {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  color: var(--ice);
+  letter-spacing: 0.02em;
+}
+
+.topbar__site-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: none;
+  transition: all var(--dur-fast) var(--ease);
+}
+
+.topbar__site-btn:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--line-strong);
+}
+
+@media (max-width: 640px) {
+  .topbar__site-btn span {
+    display: none;
+  }
+  .topbar__site-btn {
+    padding: 0;
+    width: 32px;
+    justify-content: center;
+  }
+  .topbar__crumb .topbar__mode-badge {
+    display: none;
+  }
+}
