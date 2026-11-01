@@ -1,5 +1,4 @@
 import { SiteFooter, SiteNav } from "../components/landing/SiteChrome";
-import LiquidGlassCluster from "../components/glass/LiquidGlassCluster";
 import { Icon } from "../components/ui/Icon";
 import { Button, Pill, Reveal } from "../components/ui/primitives";
 import { CodeBlock } from "../components/ui/code";
@@ -127,17 +126,49 @@ export default function Architecture() {
               </div>
             </Reveal>
 
-            <Reveal className="docs-hero__orb" delay={120}>
-              <LiquidGlassCluster
-                shape="Torus"
-                speed={0.4}
-                depth={1}
-                glass={{ tint: "#f7f2e8", chromatic: 0.35, frost: 0.32 }}
-                orient={{ angleX: 56, angleY: 18, angleZ: -12 }}
-              />
-              <div className="docs-hero__orb-meta">
-                <span>FIG. 01</span>
-                <span>liquid glass · refractive index 1.5</span>
+            <Reveal className="docs-hero__blueprint" delay={120}>
+              <div className="blueprint-card">
+                <div className="blueprint-card__head">
+                  <span className="blueprint-card__badge">
+                    <Icon name="layers" size={12} /> ARCH-SYSTEM · v1.0
+                  </span>
+                  <span className="blueprint-card__status">AIR-GAPPED RUNTIME</span>
+                </div>
+                <div className="blueprint-card__layers">
+                  <div className="blueprint-layer blueprint-layer--offensive">
+                    <div className="blueprint-layer__tag">01 · Static Analysis Plane (Read-Only)</div>
+                    <div className="blueprint-layer__items">
+                      <span>AST Walker</span>
+                      <span>CWE Auditor</span>
+                      <span>CVSS Scorer</span>
+                    </div>
+                  </div>
+                  <div className="blueprint-divider">
+                    <span className="blueprint-divider__label">
+                      <Icon name="lock" size={11} /> Isolated Sandbox Boundary · Zero Egress
+                    </span>
+                  </div>
+                  <div className="blueprint-layer blueprint-layer--defensive">
+                    <div className="blueprint-layer__tag">02 · Autonomous Defense Plane</div>
+                    <div className="blueprint-layer__items">
+                      <span>Telemetry Correlator</span>
+                      <span>Unified Diff Engine</span>
+                      <span>Staging Sandbox</span>
+                    </div>
+                  </div>
+                  <div className="blueprint-layer blueprint-layer--ledger">
+                    <div className="blueprint-layer__tag">03 · Cryptographic Attestation</div>
+                    <div className="blueprint-layer__items">
+                      <span>SHA-256 Hash Chain</span>
+                      <span>Atomic Rollback</span>
+                      <span>Human Gate</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="blueprint-card__foot">
+                  <Icon name="shield-check" size={12} />
+                  <span>Protected by 6 non-bypassable security controls</span>
+                </div>
               </div>
             </Reveal>
           </div>

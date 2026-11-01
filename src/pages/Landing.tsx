@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import FloatingGlassIcon from "../components/glass/FloatingGlassIcon";
 import { Icon } from "../components/ui/Icon";
 import { Button, Pill, Reveal } from "../components/ui/primitives";
 import { Gauge, LineChart, SeverityBar } from "../components/ui/viz";
@@ -21,61 +20,72 @@ const TRUST_ITEMS = [
 
 const ANALYSIS_AGENTS = [
   {
-    name: "SurfaceMapperAgent",
-    copy: "Traverses abstract syntax trees to map endpoints, parameters, and authorization guard coverage.",
+    name: "Surface Mapper",
+    role: "AST Traversal",
+    copy: "Walks the abstract syntax tree to map every endpoint, parameter, and authorization guard in the codebase.",
     chip: "AST",
   },
   {
-    name: "StaticVulnerabilityAuditorAgent",
-    copy: "Inspects seeded CWE weakness archetypes without executing dangerous application payloads.",
+    name: "Static Auditor",
+    role: "Vulnerability Detection",
+    copy: "Inspects seeded CWE weakness archetypes against the source without executing any live payloads.",
     chip: "AUDIT",
   },
   {
-    name: "RiskPrioritizerAgent",
-    copy: "Scores and ranks findings by severity, CVSS impact, and architectural privilege exposure.",
+    name: "Risk Prioritizer",
+    role: "CVSS Scoring",
+    copy: "Ranks each finding by exploitability, impact, and architectural exposure so the defense swarm knows what to fix first.",
     chip: "CVSS",
   },
   {
-    name: "ComplianceVerifierAgent",
-    copy: "Re-audits every generated patch file as an independent verification check.",
+    name: "Compliance Verifier",
+    role: "Independent Re-audit",
+    copy: "Acts as a second set of eyes — re-audits every generated patch file as an independent verification step.",
     chip: "RE-AUDIT",
   },
   {
-    name: "AnalysisReporterAgent",
-    copy: "Emits SARIF-compliant findings, cryptographic hashes, and structured telemetry.",
+    name: "Analysis Reporter",
+    role: "SARIF Output",
+    copy: "Emits SARIF-compliant findings, cryptographic hashes, and structured telemetry for downstream tooling.",
     chip: "SARIF",
   },
 ];
 
 const DEFENSE_AGENTS = [
   {
-    name: "DetectionAgent",
-    copy: "Correlates static auditor findings with active runtime application incident events.",
+    name: "Detection",
+    role: "Alert Correlation",
+    copy: "Correlates static auditor findings with active runtime incident events to confirm real exploitability.",
     chip: "ALERT",
   },
   {
-    name: "TriageAgent",
-    copy: "Deduplicates reported incidents and assigns strict severity SLA resolution targets.",
+    name: "Triage",
+    role: "SLA Assignment",
+    copy: "Deduplicates reported incidents and assigns severity-based SLA resolution targets to each confirmed issue.",
     chip: "SLA",
   },
   {
-    name: "RootCauseAgent",
-    copy: "Isolates the exact vulnerable syntax block, parameters, and defensive invariant contract.",
+    name: "Root Cause",
+    role: "Isolation",
+    copy: "Pinpoints the exact vulnerable code block, the parameters involved, and the defensive contract that was broken.",
     chip: "RCA",
   },
   {
-    name: "PatchGenerationAgent",
-    copy: "Synthesizes minimal, safe, reviewable unified diffs enforcing defensive boundaries.",
+    name: "Patch Generator",
+    role: "Unified Diff",
+    copy: "Synthesizes minimal, safe, reviewable unified diffs that enforce defensive boundaries without breaking existing behaviour.",
     chip: "DIFF",
   },
   {
-    name: "ValidationTestingAgent",
-    copy: "Executes functional and regression verification tests inside a disposable staging workspace.",
+    name: "Validation",
+    role: "Regression Testing",
+    copy: "Runs functional and security regression tests inside a disposable staging workspace before any production touch.",
     chip: "TEST",
   },
   {
-    name: "DeploymentRollbackAgent",
-    copy: "Atomically deploys verified patches to disk with cryptographic rollbacks preserved.",
+    name: "Deploy & Rollback",
+    role: "Atomic Apply",
+    copy: "Atomically applies verified patches to disk. If anything fails, a cryptographic rollback restores the prior state.",
     chip: "ATOMIC",
   },
 ];
@@ -117,123 +127,159 @@ export default function Landing() {
 
       <main>
         {/* ================================================================
-            FULL-SCREEN 3D FLOATING GLASS TORUS HERO
-            Takes the entire viewport matching Citadel cyber UI aesthetic
+            HERO SECTION
             ================================================================ */}
-        <section className="hero-fullscreen" aria-labelledby="hero-title">
-          {/* Full-bleed 3D WebGL Canvas taking the entire landing page */}
-          <div className="hero-fullscreen__canvas">
-            <FloatingGlassIcon
-              text="CITADEL"
-              shape="Torus"
-              size={1.12}
-              depth={1.15}
-              chromatic={1.05}
-              frost={0.12}
-              speed={0.85}
-            />
+        <section className="landing-hero" aria-labelledby="hero-title">
+          {/* Background grid */}
+          <div className="landing-hero__grid" aria-hidden="true" />
+
+          {/* Ambient glow orbs */}
+          <div className="landing-hero__ambient" aria-hidden="true">
+            <div className="landing-hero__orb landing-hero__orb--a" />
+            <div className="landing-hero__orb landing-hero__orb--b" />
           </div>
 
-          {/* Vignette overlay */}
-          <div className="hero-fullscreen__vignette" />
-
-          {/* Foreground UI Layer */}
-          <div className="hero-fullscreen__overlay">
-            {/* Top Tags Bar */}
-            <div className="hero-fullscreen__top-tags">
-              <span className="hero__eyebrow--warm">
-                <Icon name="shield-check" size={13} />
-                Dual-Swarm Invariant · Sovereign Defense
-              </span>
-              <span className="hero-fullscreen__badge">
-                <span className="dot" />
-                Air-Gapped Simulation Arena · Zero Host Egress
-              </span>
-            </div>
-
-            {/* Central Action Dock (Shifted down for unobstructed 3D torus breathing room) */}
-            <div className="hero-fullscreen__dock">
-              <h1 id="hero-title" className="sr-only">
-                Citadel — Autonomous Defensive Cyber Range
-              </h1>
-
-              <div className="hero-fullscreen__ctas">
-                <Button
-                  to="/console"
-                  size="lg"
-                  iconRight="arrow-right"
-                  className="btn--originkit-primary"
-                  transition
-                >
-                  Enter the range
-                </Button>
-                <Button
-                  to="/console/live"
-                  size="lg"
-                  icon="folder"
-                  className="btn--originkit-ghost"
-                  transition
-                >
-                  Remediate Codebase
-                </Button>
-                <Button
-                  to="/architecture"
-                  size="lg"
-                  icon="book"
-                  variant="ghost"
-                >
-                  Platform Architecture
-                </Button>
-              </div>
-            </div>
-
-            {/* Scroll down prompt */}
-            <a href="#overview" className="hero-fullscreen__scroll" aria-label="Scroll to explore platform">
-              <span>Explore Defensive Architecture</span>
-              <Icon name="chevron-down" size={14} />
-            </a>
-          </div>
-        </section>
-
-        {/* ================================================================
-            MISSION NARRATIVE INTRO (Shifted below hero for clean 3D focus)
-            ================================================================ */}
-        <section className="section hero-narrative-section" id="overview">
           <div className="container">
-            <Reveal className="hero-narrative-card">
-              <div className="hero-narrative-card__lead">
-                <span className="hero__eyebrow--warm">
-                  <Icon name="shield-check" size={13} />
-                  Architectural Security Governance
-                </span>
-                <h2 className="hero-narrative-card__heading">
-                  Preserve the boundary <span className="gradient-text">before the breach.</span>
-                </h2>
+            <div className="landing-hero__inner">
+              {/* Left: copy */}
+              <div className="landing-hero__copy">
+                <div className="landing-hero__eyebrow">
+                  <span className="dot-pulse" />
+                  <span>Simulation range · online</span>
+                </div>
+
+                <h1 id="hero-title" className="landing-hero__title">
+                  Security testing that doesn't{" "}
+                  <span className="landing-hero__title-accent">leave the sandbox.</span>
+                </h1>
+
+                <p className="landing-hero__sub">
+                  Citadel runs two autonomous agent swarms in a closed loop — one finds
+                  vulnerabilities in your code, the other patches and proves them fixed.
+                  Nothing leaves the machine.
+                </p>
+
+                <div className="landing-hero__ctas">
+                  <Button
+                    to="/console"
+                    size="lg"
+                    variant="primary"
+                    iconRight="arrow-right"
+                  >
+                    Open the console
+                  </Button>
+                  <Button
+                    to="/console/live"
+                    size="lg"
+                    variant="ghost"
+                    icon="folder"
+                  >
+                    Scan a codebase
+                  </Button>
+                  <Button
+                    to="/architecture"
+                    size="lg"
+                    variant="ghost"
+                    icon="book"
+                  >
+                    How it works
+                  </Button>
+                </div>
+
+                <div className="landing-hero__proof">
+                  <div>
+                    <b>11</b>
+                    <span>Specialist agents</span>
+                  </div>
+                  <div>
+                    <b>4</b>
+                    <span>CWE classes covered</span>
+                  </div>
+                  <div>
+                    <b>SHA-256</b>
+                    <span>Chained audit ledger</span>
+                  </div>
+                  <div>
+                    <b>Zero</b>
+                    <span>External network egress</span>
+                  </div>
+                </div>
               </div>
-              <p className="hero-narrative-card__sub">
-                An isolated cyber arena where autonomous swarms model adversarial exploits,
-                synthesize verified cryptographic patches, and seal defenses in an immutable audit ledger.
-              </p>
-              <div className="hero-narrative-card__pills">
-                <span className="hero-narrative-card__pill">
-                  <Icon name="shield" size={12} />
-                  Mode 01 · Closed-Loop Swarm Simulation
-                </span>
-                <span className="hero-narrative-card__pill">
-                  <Icon name="folder" size={12} />
-                  Mode 02 · Live Codebase Auto-Remediation
-                </span>
-                <span className="hero-narrative-card__pill">
-                  <Icon name="fingerprint" size={12} />
-                  Cryptographic SHA-256 Ledger Chain
-                </span>
+
+              {/* Right: live terminal card */}
+              <div className="landing-hero__terminal">
+                <div className="terminal-card">
+                  <div className="terminal-card__header">
+                    <div className="terminal-card__dots" aria-hidden="true">
+                      <span />
+                      <span />
+                      <span />
+                    </div>
+                    <span className="terminal-card__title">citadel · live audit</span>
+                    <Pill tone="live" icon="shield-check">Running</Pill>
+                  </div>
+                  <div className="terminal-card__body">
+                    <div className="terminal-line terminal-line--done">
+                      <Icon name="check-circle" size={12} />
+                      <span className="terminal-line__agent">SurfaceMapper</span>
+                      <span className="terminal-line__msg">mapped 47 endpoints, 12 auth guards</span>
+                    </div>
+                    <div className="terminal-line terminal-line--done">
+                      <Icon name="check-circle" size={12} />
+                      <span className="terminal-line__agent">StaticAuditor</span>
+                      <span className="terminal-line__msg">found CWE-89 · CWE-502 · CWE-79</span>
+                    </div>
+                    <div className="terminal-line terminal-line--done">
+                      <Icon name="check-circle" size={12} />
+                      <span className="terminal-line__agent">RiskPrioritizer</span>
+                      <span className="terminal-line__msg">CRITICAL: SQLi in /api/users</span>
+                    </div>
+                    <div className="terminal-line terminal-line--active">
+                      <span className="terminal-spinner" aria-hidden="true" />
+                      <span className="terminal-line__agent">PatchGenerator</span>
+                      <span className="terminal-line__msg">synthesizing parameterised query…</span>
+                    </div>
+                    <div className="terminal-line terminal-line--pending">
+                      <span className="terminal-dot" aria-hidden="true" />
+                      <span className="terminal-line__agent">ValidationTesting</span>
+                      <span className="terminal-line__msg">waiting for patch diff…</span>
+                    </div>
+                    <div className="terminal-line terminal-line--pending">
+                      <span className="terminal-dot" aria-hidden="true" />
+                      <span className="terminal-line__agent">Deploy & Rollback</span>
+                      <span className="terminal-line__msg">standby · atomic apply queued</span>
+                    </div>
+
+                    <div className="terminal-card__diff">
+                      <div className="diff-line diff-line--del">
+                        − query = f"SELECT * WHERE id = '{"{id}"}'
+                      </div>
+                      <div className="diff-line diff-line--add">
+                        + cursor.execute(query, ({"{id}"},))
+                      </div>
+                    </div>
+                  </div>
+                  <div className="terminal-card__footer">
+                    <Icon name="lock" size={11} />
+                    <span>Isolated workspace · no external calls</span>
+                    <span className="terminal-card__hash">
+                      sha256:{state.audit[state.audit.length - 1]?.entryHash?.slice(0, 10) ?? "genesis"}…
+                    </span>
+                  </div>
+                </div>
               </div>
-            </Reveal>
+            </div>
           </div>
+
+          {/* Scroll hint */}
+          <a href="#overview" className="landing-hero__scroll" aria-label="Scroll to learn more">
+            <span>See how it works</span>
+            <Icon name="chevron-down" size={14} />
+          </a>
         </section>
 
         {/* ----------------------------------------------------------------
-            Continuous Trust & Isolation Marquee
+            Trust strip
             ---------------------------------------------------------------- */}
         <div className="trust-strip" aria-hidden="true">
           <div className="trust-strip__track">
@@ -251,48 +297,52 @@ export default function Landing() {
         </div>
 
         {/* ================================================================
-            ORIGINKIT 3-UP FEATURE ROW WITH COLOR ACCENT BARS
+            HOW IT WORKS — 3-UP FEATURE ROW
             ================================================================ */}
-        <section id="features" className="section platform-section" style={{ borderTop: "1px solid var(--line)" }}>
+        <section id="overview" className="section platform-section" style={{ borderTop: "1px solid var(--line)" }}>
           <div className="container">
             <Reveal className="section-head section-head--split">
               <div className="section-head__lead">
-                <span className="hero__eyebrow--warm">Architectural Core Principles</span>
-                <h2 className="h2" style={{ fontFamily: "var(--font-display)", letterSpacing: "0.02em", fontSize: "clamp(2.2rem, 4.5vw, 3.6rem)" }}>
-                  Engineered for Resilient Defense
+                <span className="eyebrow">How it works</span>
+                <h2 className="h2">
+                  Built for security teams who need proof, not promises.
                 </h2>
               </div>
               <p className="lede">
-                Architected from first principles for controlled educational simulation and enterprise security assurance.
-                Offensive AST audit swarms and defensive synthesis swarms interact inside isolated runtimes.
+                Citadel runs offensive analysis and defensive remediation in a
+                closed loop, inside a sandboxed environment. Every decision is
+                logged in a tamper-evident audit chain.
               </p>
             </Reveal>
 
             <div className="originkit-features">
               <Reveal className="originkit-feature-card" delay={40}>
                 <span className="k" />
-                <h3>Closed-Loop Simulation</h3>
+                <h3>Closed-loop simulation</h3>
                 <p>
-                  Offensive analysis agents traverse abstract syntax trees to isolate seeded vulnerabilities (CWE-89, CWE-295, CWE-502, CWE-489)
-                  inside an isolated mock enterprise with zero host exposure.
+                  Five analysis agents traverse your ASTs to surface seeded
+                  vulnerabilities — SQLi, deserialisation, XSS, debug exposure —
+                  inside an isolated mock enterprise. Nothing touches live systems.
                 </p>
               </Reveal>
 
               <Reveal className="originkit-feature-card" delay={120}>
                 <span className="k" />
-                <h3>Live Workspace Remediation</h3>
+                <h3>Live workspace remediation</h3>
                 <p>
-                  Attach your project directory to run non-destructive AST audits.
-                  Multi-pass remediation synthesizes minimal, verified unified diffs, stages changes in memory, and validates complete resolution.
+                  Attach your project folder and six defense agents handle the
+                  rest: root-cause analysis, patch generation, staged validation,
+                  and atomic deployment — with automatic rollback on failure.
                 </p>
               </Reveal>
 
               <Reveal className="originkit-feature-card" delay={200}>
                 <span className="k" />
-                <h3>Cryptographic Audit Chain</h3>
+                <h3>Cryptographic audit chain</h3>
                 <p>
-                  Every root-cause verdict, unified patch diff, verification suite run, and rollback state is SHA-256 chained in
-                  a tamper-evident audit ledger with human-in-the-loop approval gates.
+                  Every finding, diff, test result, and approval is SHA-256
+                  chained in a tamper-evident ledger. If a single entry changes,
+                  the chain breaks and you'll know about it.
                 </p>
               </Reveal>
             </div>
@@ -300,7 +350,7 @@ export default function Landing() {
         </section>
 
         {/* ----------------------------------------------------------------
-            Platform Capabilities Deep Dive
+            Platform capabilities deep dive
             ---------------------------------------------------------------- */}
         <section id="platform" className="section platform-section">
           <div className="container">
@@ -314,9 +364,9 @@ export default function Landing() {
                 </h2>
               </div>
               <p className="lede">
-                A security analysis swarm finds what is wrong. A defense swarm
-                proves it can be fixed. The judge scores the loop against ground
-                truth, and the ledger keeps everyone honest.
+                An analysis swarm finds what's wrong. A defense swarm proves
+                it can be fixed. A scoring judge evaluates the loop against
+                ground truth. The ledger keeps everyone honest.
               </p>
             </Reveal>
 
@@ -331,7 +381,7 @@ export default function Landing() {
                 <h3>Static, by design.</h3>
                 <p>
                   Agents traverse ASTs, structure and configuration — never
-                  weaponized payloads. Every finding carries a file, a line and
+                  weaponised payloads. Every finding carries a file, a line and
                   a remediation contract.
                 </p>
                 <div className="cap-card__visual cap-card__visual--surface">
@@ -397,23 +447,21 @@ export default function Landing() {
         </section>
 
         {/* ----------------------------------------------------------------
-            Specialist Minds Swarms Section
+            Specialist agents
             ---------------------------------------------------------------- */}
         <section id="swarms" className="section swarm-section">
           <div className="container">
             <Reveal className="section-head section-head--split">
               <div className="section-head__lead">
-                <span className="eyebrow">The swarms</span>
+                <span className="eyebrow">The agents</span>
                 <h2 className="h2">
-                  Specialist minds.
-                  <br />
-                  Fixed roles.
+                  Eleven focused agents.<br />One shared goal.
                 </h2>
               </div>
               <p className="lede">
-                Eleven narrow agents beat one generalist. Each runs inside a
-                tool allowlist, reports structured output, and hands the next
-                agent a typed artifact.
+                Narrow agents outperform generalists because they can't
+                overstep. Each agent has a typed input, a typed output, and
+                a strict tool allowlist. No agent touches what it doesn't own.
               </p>
             </Reveal>
 
@@ -433,7 +481,10 @@ export default function Landing() {
                         {String(index + 1).padStart(2, "0")}
                       </span>
                       <div>
-                        <h4>{agent.name}</h4>
+                        <h4>
+                          {agent.name}
+                          <span className="agent-row__role"> · {agent.role}</span>
+                        </h4>
                         <p>{agent.copy}</p>
                       </div>
                       <span className="agent-row__chip">{agent.chip}</span>
@@ -446,7 +497,7 @@ export default function Landing() {
                 <div className="swarm-panel__head">
                   <div>
                     <span className="eyebrow">Defensive response</span>
-                    <h3 className="h3">Heal it without breaking it.</h3>
+                    <h3 className="h3">Fix it without breaking it.</h3>
                   </div>
                   <Pill tone="violet" icon="zap">
                     06 agents
@@ -459,7 +510,10 @@ export default function Landing() {
                         {String(index + 1).padStart(2, "0")}
                       </span>
                       <div>
-                        <h4>{agent.name}</h4>
+                        <h4>
+                          {agent.name}
+                          <span className="agent-row__role"> · {agent.role}</span>
+                        </h4>
                         <p>{agent.copy}</p>
                       </div>
                       <span className="agent-row__chip">{agent.chip}</span>
@@ -488,29 +542,29 @@ export default function Landing() {
         </section>
 
         {/* ----------------------------------------------------------------
-            Safety & Governance Section
+            Safety & governance
             ---------------------------------------------------------------- */}
         <section id="governance" className="section governance-section">
           <div className="container governance">
             <Reveal className="governance__copy">
-              <span className="eyebrow">Safety &amp; governance</span>
+              <span className="eyebrow">Safety & governance</span>
               <h2 className="h2">
                 Nothing moves
                 <br />
                 without a receipt.
               </h2>
               <p className="lede">
-                Autonomy is only useful if it is accountable. Six independent
-                controls wrap every tool call, file write and approval — and the
-                ledger proves it after the fact.
+                Autonomous systems need accountability. Six independent controls
+                wrap every tool call, file write, and approval step. The ledger
+                proves what happened after the fact — not just what was intended.
               </p>
               <div className="control-list">
                 {[
                   ["network", "Network isolation", "Loopback targets only"],
                   ["sliders", "Tool allowlist", "Role-scoped operations"],
                   ["users", "Human gate", "Approve before deploy"],
-                  ["power", "Kill switch", "Halt the whole range"],
-                  ["message", "Prompt sanitizer", "Neutralize injection"],
+                  ["power", "Kill switch", "Halt the entire range"],
+                  ["message", "Prompt sanitizer", "Block injection attempts"],
                   ["fingerprint", "Immutable ledger", "SHA-256 hash chain"],
                 ].map(([icon, title, copy]) => (
                   <div className="control-item" key={title}>
@@ -578,7 +632,7 @@ export default function Landing() {
         </section>
 
         {/* ----------------------------------------------------------------
-            Evidence & Live Posture HUD Section
+            Evidence / live posture
             ---------------------------------------------------------------- */}
         <section className="section proof-section">
           <div className="container">
@@ -614,8 +668,7 @@ export default function Landing() {
                       MEDIUM:
                         findings.filter((f) => f.severity === "MEDIUM").length ||
                         1,
-                      LOW:
-                        findings.filter((f) => f.severity === "LOW").length || 1,
+                      LOW: findings.filter((f) => f.severity === "LOW").length || 1,
                     }}
                     total={Math.max(findings.length, 4)}
                   />
@@ -678,7 +731,7 @@ export default function Landing() {
         </section>
 
         {/* ================================================================
-            ORIGINKIT STYLE CLOSING CALL TO ACTION
+            CLOSING CALL TO ACTION
             ================================================================ */}
         <section className="section section--tight">
           <div className="container">
@@ -686,9 +739,9 @@ export default function Landing() {
               <div>
                 <h2>Audit. Patch. Prove. Repeat.</h2>
                 <p>
-                  The Citadel range is live and ready. Step inside to run a closed-loop simulation
-                  campaign on the synthetic mock enterprise, or connect your local folder for
-                  deterministic automated vulnerability remediation.
+                  The range is live. Run a closed-loop simulation on the mock
+                  enterprise, or connect your local codebase for deterministic
+                  automated remediation.
                 </p>
               </div>
 
@@ -701,7 +754,7 @@ export default function Landing() {
                     className="btn--originkit-primary"
                     transition
                   >
-                    Enter the range
+                    Open the console
                   </Button>
                   <Button
                     to="/console/live"
@@ -710,7 +763,7 @@ export default function Landing() {
                     className="btn--originkit-ghost"
                     transition
                   >
-                    Live Codebase
+                    Scan a codebase
                   </Button>
                 </div>
                 <div className="originkit-cli-pill">
