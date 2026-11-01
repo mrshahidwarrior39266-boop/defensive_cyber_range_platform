@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import FloatingGlassIcon from "../components/glass/FloatingGlassIcon";
 import { Icon } from "../components/ui/Icon";
 import { Button, Pill, Reveal } from "../components/ui/primitives";
 import { Gauge, LineChart, SeverityBar } from "../components/ui/viz";
@@ -6,7 +7,7 @@ import { SiteFooter, SiteNav } from "../components/landing/SiteChrome";
 import { useDocumentTitle } from "../lib/hooks";
 import { useRange } from "../lib/simulation/store";
 import { verifyAuditChain } from "../lib/simulation/engine";
-import { formatMs } from "../lib/utils";
+import { cn, formatMs } from "../lib/utils";
 import "../styles/landing.css";
 
 const TRUST_ITEMS = [
@@ -90,6 +91,49 @@ const DEFENSE_AGENTS = [
   },
 ];
 
+const ATTACK_SCENARIOS = [
+  {
+    id: "cwe-89",
+    name: "SQL Injection Probe",
+    cwe: "CWE-89",
+    target: "database.py : execute_query()",
+    payload: "' OR 1=1; --",
+    response: "Parameterized query boundary enforced; dynamic string interpolation blocked.",
+    diff: "+ cursor.execute(query, (user_id,))",
+    status: "SEALED",
+  },
+  {
+    id: "cwe-502",
+    name: "Insecure Deserialization",
+    cwe: "CWE-502",
+    target: "telemetry.py : load_state()",
+    payload: "pickle.loads(malicious_stream)",
+    response: "Pickle deserialization denied; safe schema JSON parsing substituted.",
+    diff: "+ json.loads(payload.decode('utf-8'))",
+    status: "SEALED",
+  },
+  {
+    id: "cwe-79",
+    name: "Cross-Site Scripting (XSS)",
+    cwe: "CWE-79",
+    target: "service.py : render_profile()",
+    payload: "<script>alert(1)</script>",
+    response: "Raw HTML output sanitized with contextual escape invariants.",
+    diff: "+ html.escape(user_input, quote=True)",
+    status: "SEALED",
+  },
+  {
+    id: "cwe-489",
+    name: "Debug Route Exposure",
+    cwe: "CWE-489",
+    target: "config.py : get_app_settings()",
+    payload: "GET /_debug/env_dump",
+    response: "Production flag set to False; internal debug handlers stripped.",
+    diff: "- DEBUG = True\n+ DEBUG = False",
+    status: "SEALED",
+  },
+];
+
 const PIPELINE = [
   "Surface",
   "Audit",
@@ -104,6 +148,15 @@ const PIPELINE = [
 export default function Landing() {
   useDocumentTitle("Citadel — Autonomous Defensive Cyber Range");
   const { state } = useRange();
+
+  // Hero showcase state
+  const [heroTab, setHeroTab] = useState<"3d" | "terminal">("3d");
+  const [hero3dShape, setHero3dShape] = useState<"Sphere" | "Torus" | "X">("Sphere");
+
+  // Interactive 3D Arena state
+  const [arenaShape, setArenaShape] = useState<"Torus" | "Sphere" | "X">("Torus");
+  const [activeScenario, setActiveScenario] = useState(ATTACK_SCENARIOS[0]);
+  const [isProbing, setIsProbing] = useState(false);
 
   const lastRound = state.rounds[state.rounds.length - 1];
   const posture = lastRound
@@ -121,13 +174,21 @@ export default function Landing() {
     : [100];
   const findings = state.findings ?? [];
 
+  const triggerProbe = (scenario: typeof ATTACK_SCENARIOS[0]) => {
+    setIsProbing(true);
+    setActiveScenario(scenario);
+    setTimeout(() => {
+      setIsProbing(false);
+    }, 450);
+  };
+
   return (
     <div className="site">
       <SiteNav />
 
       <main>
         {/* ================================================================
-            HERO SECTION
+            HERO SECTION WITH 3D CYBER PERIMETER
             ================================================================ */}
         <section className="landing-hero" aria-labelledby="hero-title">
           {/* Background grid */}
@@ -145,7 +206,7 @@ export default function Landing() {
               <div className="landing-hero__copy">
                 <div className="landing-hero__eyebrow">
                   <span className="dot-pulse" />
-                  <span>Simulation range · online</span>
+                  <span>Defensive cyber range · online</span>
                 </div>
 
                 <h1 id="hero-title" className="landing-hero__title">
@@ -154,9 +215,9 @@ export default function Landing() {
                 </h1>
 
                 <p className="landing-hero__sub">
-                  Citadel runs two autonomous agent swarms in a closed loop — one finds
-                  vulnerabilities in your code, the other patches and proves them fixed.
-                  Nothing leaves the machine.
+                  Citadel runs two autonomous agent swarms in an air-gapped closed loop — one finds
+                  vulnerabilities in your code, the other synthesizes verified patches and proves them fixed.
+                  Zero external egress.
                 </p>
 
                 <div className="landing-hero__ctas">
@@ -182,7 +243,7 @@ export default function Landing() {
                     variant="ghost"
                     icon="book"
                   >
-                    How it works
+                    System design
                   </Button>
                 </div>
 
@@ -206,66 +267,148 @@ export default function Landing() {
                 </div>
               </div>
 
-              {/* Right: live terminal card */}
+              {/* Right: Interactive 3D Cyber Core & Terminal Showcase */}
               <div className="landing-hero__terminal">
-                <div className="terminal-card">
-                  <div className="terminal-card__header">
-                    <div className="terminal-card__dots" aria-hidden="true">
-                      <span />
-                      <span />
-                      <span />
+                <div className="hero-showcase-card">
+                  <div className="hero-showcase-header">
+                    <div className="hero-showcase-tabs">
+                      <button
+                        type="button"
+                        className={cn("hero-showcase-tab", heroTab === "3d" && "is-active")}
+                        onClick={() => setHeroTab("3d")}
+                      >
+                        <Icon name="shield-check" size={13} />
+                        <span>3D Defense Core</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={cn("hero-showcase-tab", heroTab === "terminal" && "is-active")}
+                        onClick={() => setHeroTab("terminal")}
+                      >
+                        <Icon name="terminal" size={13} />
+                        <span>Live AST Terminal</span>
+                      </button>
                     </div>
-                    <span className="terminal-card__title">citadel · live audit</span>
-                    <Pill tone="live" icon="shield-check">Running</Pill>
+                    <Pill tone="live" icon="shield-check">Air-Gapped</Pill>
                   </div>
-                  <div className="terminal-card__body">
-                    <div className="terminal-line terminal-line--done">
-                      <Icon name="check-circle" size={12} />
-                      <span className="terminal-line__agent">SurfaceMapper</span>
-                      <span className="terminal-line__msg">mapped 47 endpoints, 12 auth guards</span>
-                    </div>
-                    <div className="terminal-line terminal-line--done">
-                      <Icon name="check-circle" size={12} />
-                      <span className="terminal-line__agent">StaticAuditor</span>
-                      <span className="terminal-line__msg">found CWE-89 · CWE-502 · CWE-79</span>
-                    </div>
-                    <div className="terminal-line terminal-line--done">
-                      <Icon name="check-circle" size={12} />
-                      <span className="terminal-line__agent">RiskPrioritizer</span>
-                      <span className="terminal-line__msg">CRITICAL: SQLi in /api/users</span>
-                    </div>
-                    <div className="terminal-line terminal-line--active">
-                      <span className="terminal-spinner" aria-hidden="true" />
-                      <span className="terminal-line__agent">PatchGenerator</span>
-                      <span className="terminal-line__msg">synthesizing parameterised query…</span>
-                    </div>
-                    <div className="terminal-line terminal-line--pending">
-                      <span className="terminal-dot" aria-hidden="true" />
-                      <span className="terminal-line__agent">ValidationTesting</span>
-                      <span className="terminal-line__msg">waiting for patch diff…</span>
-                    </div>
-                    <div className="terminal-line terminal-line--pending">
-                      <span className="terminal-dot" aria-hidden="true" />
-                      <span className="terminal-line__agent">Deploy & Rollback</span>
-                      <span className="terminal-line__msg">standby · atomic apply queued</span>
-                    </div>
 
-                    <div className="terminal-card__diff">
-                      <div className="diff-line diff-line--del">
-                        − query = f"SELECT * WHERE id = '{"{id}"}'
+                  {heroTab === "3d" ? (
+                    <div className="hero-3d-stage">
+                      <div className="hero-3d-canvas-wrap">
+                        <FloatingGlassIcon
+                          text="CITADEL"
+                          shape={hero3dShape}
+                          size={1.1}
+                          depth={1.15}
+                          chromatic={0.85}
+                          frost={0.12}
+                          speed={0.65}
+                          tint={[0.96, 0.9, 0.84]}
+                        />
                       </div>
-                      <div className="diff-line diff-line--add">
-                        + cursor.execute(query, ({"{id}"},))
+
+                      <div className="hero-3d-overlay">
+                        <div className="hero-3d-controls">
+                          <button
+                            type="button"
+                            className={cn("hero-3d-btn", hero3dShape === "Sphere" && "is-active")}
+                            onClick={() => setHero3dShape("Sphere")}
+                            title="Sandbox Isolation Sphere"
+                          >
+                            <Icon name="shield" size={11} />
+                            <span>Sandbox</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={cn("hero-3d-btn", hero3dShape === "Torus" && "is-active")}
+                            onClick={() => setHero3dShape("Torus")}
+                            title="Dual-Swarm Invariant Loop"
+                          >
+                            <Icon name="workflow" size={11} />
+                            <span>Swarm Loop</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={cn("hero-3d-btn", hero3dShape === "X" && "is-active")}
+                            onClick={() => setHero3dShape("X")}
+                            title="Air-Gap Boundary"
+                          >
+                            <Icon name="lock" size={11} />
+                            <span>Air-Gap</span>
+                          </button>
+                        </div>
+                        <div className="hero-3d-cue">
+                          <Icon name="scan" size={10} />
+                          <span>Interactive 3D · Drag to rotate perimeter</span>
+                        </div>
+                      </div>
+
+                      <div className="hero-3d-footer">
+                        <div>
+                          <span className="mono">ISOLATION</span>
+                          <b>Enforced (0 egress)</b>
+                        </div>
+                        <div>
+                          <span className="mono">LEDGER</span>
+                          <b>SHA-256 Sealed</b>
+                        </div>
+                        <div>
+                          <span className="mono">ANALYSIS</span>
+                          <b>Static AST only</b>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="terminal-card__footer">
-                    <Icon name="lock" size={11} />
-                    <span>Isolated workspace · no external calls</span>
-                    <span className="terminal-card__hash">
-                      sha256:{state.audit[state.audit.length - 1]?.entryHash?.slice(0, 10) ?? "genesis"}…
-                    </span>
-                  </div>
+                  ) : (
+                    <div className="terminal-card__body">
+                      <div className="terminal-line terminal-line--done">
+                        <Icon name="check-circle" size={12} />
+                        <span className="terminal-line__agent">SurfaceMapper</span>
+                        <span className="terminal-line__msg">mapped 47 endpoints, 12 auth guards</span>
+                      </div>
+                      <div className="terminal-line terminal-line--done">
+                        <Icon name="check-circle" size={12} />
+                        <span className="terminal-line__agent">StaticAuditor</span>
+                        <span className="terminal-line__msg">found CWE-89 · CWE-502 · CWE-79</span>
+                      </div>
+                      <div className="terminal-line terminal-line--done">
+                        <Icon name="check-circle" size={12} />
+                        <span className="terminal-line__agent">RiskPrioritizer</span>
+                        <span className="terminal-line__msg">CRITICAL: SQLi in /api/users</span>
+                      </div>
+                      <div className="terminal-line terminal-line--active">
+                        <span className="terminal-spinner" aria-hidden="true" />
+                        <span className="terminal-line__agent">PatchGenerator</span>
+                        <span className="terminal-line__msg">synthesizing parameterised query…</span>
+                      </div>
+                      <div className="terminal-line terminal-line--pending">
+                        <span className="terminal-dot" aria-hidden="true" />
+                        <span className="terminal-line__agent">ValidationTesting</span>
+                        <span className="terminal-line__msg">waiting for patch diff…</span>
+                      </div>
+                      <div className="terminal-line terminal-line--pending">
+                        <span className="terminal-dot" aria-hidden="true" />
+                        <span className="terminal-line__agent">Deploy & Rollback</span>
+                        <span className="terminal-line__msg">standby · atomic apply queued</span>
+                      </div>
+
+                      <div className="terminal-card__diff">
+                        <div className="diff-line diff-line--del">
+                          − query = f"SELECT * WHERE id = '{"{id}"}'
+                        </div>
+                        <div className="diff-line diff-line--add">
+                          + cursor.execute(query, ({"{id}"},))
+                        </div>
+                      </div>
+
+                      <div className="terminal-card__footer">
+                        <Icon name="lock" size={11} />
+                        <span>Isolated workspace · no external calls</span>
+                        <span className="terminal-card__hash">
+                          sha256:{state.audit[state.audit.length - 1]?.entryHash?.slice(0, 10) ?? "genesis"}…
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -273,13 +416,13 @@ export default function Landing() {
 
           {/* Scroll hint */}
           <a href="#overview" className="landing-hero__scroll" aria-label="Scroll to learn more">
-            <span>See how it works</span>
+            <span>Explore defensive architecture</span>
             <Icon name="chevron-down" size={14} />
           </a>
         </section>
 
         {/* ----------------------------------------------------------------
-            Trust strip
+            Continuous Trust & Isolation Marquee
             ---------------------------------------------------------------- */}
         <div className="trust-strip" aria-hidden="true">
           <div className="trust-strip__track">
@@ -303,7 +446,7 @@ export default function Landing() {
           <div className="container">
             <Reveal className="section-head section-head--split">
               <div className="section-head__lead">
-                <span className="eyebrow">How it works</span>
+                <span className="eyebrow">Defensive engineering</span>
                 <h2 className="h2">
                   Built for security teams who need proof, not promises.
                 </h2>
@@ -344,6 +487,154 @@ export default function Landing() {
                   chained in a tamper-evident ledger. If a single entry changes,
                   the chain breaks and you'll know about it.
                 </p>
+              </Reveal>
+            </div>
+          </div>
+        </section>
+
+        {/* ================================================================
+            INTERACTIVE 3D DEFENSIVE PERIMETER ARENA
+            ================================================================ */}
+        <section id="arena-3d" className="section arena-3d-section">
+          <div className="container">
+            <Reveal className="section-head section-head--split">
+              <div className="section-head__lead">
+                <span className="eyebrow">Interactive 3D range node</span>
+                <h2 className="h2">
+                  Test the sovereign perimeter.
+                </h2>
+              </div>
+              <p className="lede">
+                Simulate adversarial attack probes against the range in real time.
+                Observe how the dual-swarm architecture traps, synthesizes, and seals
+                defenses without letting any request touch the external host.
+              </p>
+            </Reveal>
+
+            <div className="arena-3d-grid">
+              {/* Left: 3D interactive model */}
+              <Reveal className="arena-3d-card" delay={40}>
+                <div className="arena-3d-card__head">
+                  <div className="row gap-8">
+                    <span className="score-dot bg-mint" />
+                    <span className="mono tiny">CITADEL_PERIMETER_v1</span>
+                  </div>
+                  <div className="row gap-6">
+                    <button
+                      type="button"
+                      className={cn("arena-shape-btn", arenaShape === "Torus" && "is-active")}
+                      onClick={() => setArenaShape("Torus")}
+                    >
+                      Torus (Loop)
+                    </button>
+                    <button
+                      type="button"
+                      className={cn("arena-shape-btn", arenaShape === "Sphere" && "is-active")}
+                      onClick={() => setArenaShape("Sphere")}
+                    >
+                      Sphere (Sandbox)
+                    </button>
+                    <button
+                      type="button"
+                      className={cn("arena-shape-btn", arenaShape === "X" && "is-active")}
+                      onClick={() => setArenaShape("X")}
+                    >
+                      X (Air Gap)
+                    </button>
+                  </div>
+                </div>
+
+                <div className="arena-3d-viewport">
+                  <FloatingGlassIcon
+                    text="SOVEREIGN"
+                    shape={arenaShape}
+                    size={1.12}
+                    depth={1.2}
+                    chromatic={1.05}
+                    frost={0.14}
+                    speed={0.6}
+                    tint={[0.92, 0.84, 0.78]}
+                  />
+                  <div className="arena-3d-badge">
+                    <Icon name="scan" size={11} />
+                    <span>Drag 3D model to inspect refractive dispersion</span>
+                  </div>
+                </div>
+
+                <div className="arena-3d-card__foot">
+                  <div className="arena-stat">
+                    <span>HOST EGRESS</span>
+                    <b>0.00 KB (BLOCKED)</b>
+                  </div>
+                  <div className="arena-stat">
+                    <span>INVARIANT</span>
+                    <b>STRICT CONFINEMENT</b>
+                  </div>
+                  <div className="arena-stat">
+                    <span>LEDGER CHAIN</span>
+                    <b>VERIFIED HASH</b>
+                  </div>
+                </div>
+              </Reveal>
+
+              {/* Right: Attack probe scenario console */}
+              <Reveal className="arena-probe-console" delay={120}>
+                <div className="arena-probe-header">
+                  <div>
+                    <span className="eyebrow">Interactive probe tester</span>
+                    <h3>Simulate attack vector</h3>
+                  </div>
+                  <Pill tone={isProbing ? "high" : "live"} icon="shield-check">
+                    {isProbing ? "Intercepting..." : "Perimeter Armed"}
+                  </Pill>
+                </div>
+
+                <div className="arena-probe-selector">
+                  {ATTACK_SCENARIOS.map((scenario) => (
+                    <button
+                      key={scenario.id}
+                      type="button"
+                      className={cn(
+                        "arena-scenario-btn",
+                        activeScenario.id === scenario.id && "is-active",
+                      )}
+                      onClick={() => triggerProbe(scenario)}
+                    >
+                      <div className="row spread align-center">
+                        <span className="arena-scenario-cwe">{scenario.cwe}</span>
+                        <span className="arena-scenario-tag">Probe</span>
+                      </div>
+                      <b>{scenario.name}</b>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="arena-probe-result">
+                  <div className="arena-result-row">
+                    <span className="mono muted">TARGET SURFACE</span>
+                    <span className="mono">{activeScenario.target}</span>
+                  </div>
+                  <div className="arena-result-row">
+                    <span className="mono muted">SIMULATED PAYLOAD</span>
+                    <span className="mono arena-payload">{activeScenario.payload}</span>
+                  </div>
+                  <div className="arena-result-row">
+                    <span className="mono muted">REMEDIATION OUTCOME</span>
+                    <span>{activeScenario.response}</span>
+                  </div>
+
+                  <div className="arena-diff-box">
+                    <div className="mono tiny muted mb-4">SYNTHESIZED SAFE CONTRACT</div>
+                    <pre className="mono">{activeScenario.diff}</pre>
+                  </div>
+
+                  <div className="arena-receipt">
+                    <Icon name="check-circle" size={13} />
+                    <span>
+                      Intercepted by AST guard · Sealed into SHA-256 chained audit trail · 0 host egress
+                    </span>
+                  </div>
+                </div>
               </Reveal>
             </div>
           </div>
