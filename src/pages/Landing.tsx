@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import FloatingGlassIcon from "../components/glass/FloatingGlassIcon";
 import { Icon } from "../components/ui/Icon";
 import { Button, Pill, Reveal } from "../components/ui/primitives";
@@ -7,7 +7,7 @@ import { SiteFooter, SiteNav } from "../components/landing/SiteChrome";
 import { useDocumentTitle } from "../lib/hooks";
 import { useRange } from "../lib/simulation/store";
 import { verifyAuditChain } from "../lib/simulation/engine";
-import { cn, formatMs } from "../lib/utils";
+import { formatMs } from "../lib/utils";
 import "../styles/landing.css";
 
 const TRUST_ITEMS = [
@@ -21,116 +21,62 @@ const TRUST_ITEMS = [
 
 const ANALYSIS_AGENTS = [
   {
-    name: "Surface Mapper",
-    role: "AST Traversal",
-    copy: "Walks the abstract syntax tree to map every endpoint, parameter, and authorization guard in the codebase.",
+    name: "SurfaceMapperAgent",
+    copy: "Traverses abstract syntax trees to map endpoints, parameters, and authorization guard coverage.",
     chip: "AST",
   },
   {
-    name: "Static Auditor",
-    role: "Vulnerability Detection",
-    copy: "Inspects seeded CWE weakness archetypes against the source without executing any live payloads.",
+    name: "StaticVulnerabilityAuditorAgent",
+    copy: "Inspects seeded CWE weakness archetypes without executing dangerous application payloads.",
     chip: "AUDIT",
   },
   {
-    name: "Risk Prioritizer",
-    role: "CVSS Scoring",
-    copy: "Ranks each finding by exploitability, impact, and architectural exposure so the defense swarm knows what to fix first.",
+    name: "RiskPrioritizerAgent",
+    copy: "Scores and ranks findings by severity, CVSS impact, and architectural privilege exposure.",
     chip: "CVSS",
   },
   {
-    name: "Compliance Verifier",
-    role: "Independent Re-audit",
-    copy: "Acts as a second set of eyes — re-audits every generated patch file as an independent verification step.",
+    name: "ComplianceVerifierAgent",
+    copy: "Re-audits every generated patch file as an independent verification check.",
     chip: "RE-AUDIT",
   },
   {
-    name: "Analysis Reporter",
-    role: "SARIF Output",
-    copy: "Emits SARIF-compliant findings, cryptographic hashes, and structured telemetry for downstream tooling.",
+    name: "AnalysisReporterAgent",
+    copy: "Emits SARIF-compliant findings, cryptographic hashes, and structured telemetry.",
     chip: "SARIF",
   },
 ];
 
 const DEFENSE_AGENTS = [
   {
-    name: "Detection",
-    role: "Alert Correlation",
-    copy: "Correlates static auditor findings with active runtime incident events to confirm real exploitability.",
+    name: "DetectionAgent",
+    copy: "Correlates static auditor findings with active runtime application incident events.",
     chip: "ALERT",
   },
   {
-    name: "Triage",
-    role: "SLA Assignment",
-    copy: "Deduplicates reported incidents and assigns severity-based SLA resolution targets to each confirmed issue.",
+    name: "TriageAgent",
+    copy: "Deduplicates reported incidents and assigns strict severity SLA resolution targets.",
     chip: "SLA",
   },
   {
-    name: "Root Cause",
-    role: "Isolation",
-    copy: "Pinpoints the exact vulnerable code block, the parameters involved, and the defensive contract that was broken.",
+    name: "RootCauseAgent",
+    copy: "Isolates the exact vulnerable syntax block, parameters, and defensive invariant contract.",
     chip: "RCA",
   },
   {
-    name: "Patch Generator",
-    role: "Unified Diff",
-    copy: "Synthesizes minimal, safe, reviewable unified diffs that enforce defensive boundaries without breaking existing behaviour.",
+    name: "PatchGenerationAgent",
+    copy: "Synthesizes minimal, safe, reviewable unified diffs enforcing defensive boundaries.",
     chip: "DIFF",
   },
   {
-    name: "Validation",
-    role: "Regression Testing",
-    copy: "Runs functional and security regression tests inside a disposable staging workspace before any production touch.",
+    name: "ValidationTestingAgent",
+    copy: "Executes functional and regression verification tests inside a disposable staging workspace.",
     chip: "TEST",
   },
   {
-    name: "Deploy & Rollback",
-    role: "Atomic Apply",
-    copy: "Atomically applies verified patches to disk. If anything fails, a cryptographic rollback restores the prior state.",
+    name: "DeploymentRollbackAgent",
+    copy: "Atomically deploys verified patches to disk with cryptographic rollbacks preserved.",
     chip: "ATOMIC",
-  },
-];
-
-const ATTACK_SCENARIOS = [
-  {
-    id: "cwe-89",
-    name: "SQL Injection Probe",
-    cwe: "CWE-89",
-    target: "database.py : execute_query()",
-    payload: "' OR 1=1; --",
-    response: "Parameterized query boundary enforced; dynamic string interpolation blocked.",
-    diff: "+ cursor.execute(query, (user_id,))",
-    status: "SEALED",
-  },
-  {
-    id: "cwe-502",
-    name: "Insecure Deserialization",
-    cwe: "CWE-502",
-    target: "telemetry.py : load_state()",
-    payload: "pickle.loads(malicious_stream)",
-    response: "Pickle deserialization denied; safe schema JSON parsing substituted.",
-    diff: "+ json.loads(payload.decode('utf-8'))",
-    status: "SEALED",
-  },
-  {
-    id: "cwe-79",
-    name: "Cross-Site Scripting (XSS)",
-    cwe: "CWE-79",
-    target: "service.py : render_profile()",
-    payload: "<script>alert(1)</script>",
-    response: "Raw HTML output sanitized with contextual escape invariants.",
-    diff: "+ html.escape(user_input, quote=True)",
-    status: "SEALED",
-  },
-  {
-    id: "cwe-489",
-    name: "Debug Route Exposure",
-    cwe: "CWE-489",
-    target: "config.py : get_app_settings()",
-    payload: "GET /_debug/env_dump",
-    response: "Production flag set to False; internal debug handlers stripped.",
-    diff: "- DEBUG = True\n+ DEBUG = False",
-    status: "SEALED",
   },
 ];
 
@@ -149,15 +95,6 @@ export default function Landing() {
   useDocumentTitle("Citadel — Autonomous Defensive Cyber Range");
   const { state } = useRange();
 
-  // Hero showcase state
-  const [heroTab, setHeroTab] = useState<"3d" | "terminal">("3d");
-  const [hero3dShape, setHero3dShape] = useState<"Sphere" | "Torus" | "X">("Sphere");
-
-  // Interactive 3D Arena state
-  const [arenaShape, setArenaShape] = useState<"Torus" | "Sphere" | "X">("Torus");
-  const [activeScenario, setActiveScenario] = useState(ATTACK_SCENARIOS[0]);
-  const [isProbing, setIsProbing] = useState(false);
-
   const lastRound = state.rounds[state.rounds.length - 1];
   const posture = lastRound
     ? lastRound.scorecard.securityPostureScore
@@ -174,251 +111,125 @@ export default function Landing() {
     : [100];
   const findings = state.findings ?? [];
 
-  const triggerProbe = (scenario: typeof ATTACK_SCENARIOS[0]) => {
-    setIsProbing(true);
-    setActiveScenario(scenario);
-    setTimeout(() => {
-      setIsProbing(false);
-    }, 450);
-  };
-
   return (
     <div className="site">
       <SiteNav />
 
       <main>
         {/* ================================================================
-            HERO SECTION WITH 3D CYBER PERIMETER
+            FULL-SCREEN 3D FLOATING GLASS TORUS HERO
+            Takes the entire viewport matching Citadel cyber UI aesthetic
             ================================================================ */}
-        <section className="landing-hero" aria-labelledby="hero-title">
-          {/* Background grid */}
-          <div className="landing-hero__grid" aria-hidden="true" />
-
-          {/* Ambient glow orbs */}
-          <div className="landing-hero__ambient" aria-hidden="true">
-            <div className="landing-hero__orb landing-hero__orb--a" />
-            <div className="landing-hero__orb landing-hero__orb--b" />
+        <section className="hero-fullscreen" aria-labelledby="hero-title">
+          {/* Full-bleed 3D WebGL Canvas taking the entire landing page */}
+          <div className="hero-fullscreen__canvas">
+            <FloatingGlassIcon
+              text="CITADEL"
+              shape="Torus"
+              size={1.12}
+              depth={1.15}
+              chromatic={1.05}
+              frost={0.12}
+              speed={0.85}
+            />
           </div>
 
-          <div className="container">
-            <div className="landing-hero__inner">
-              {/* Left: copy */}
-              <div className="landing-hero__copy">
-                <div className="landing-hero__eyebrow">
-                  <span className="dot-pulse" />
-                  <span>Defensive cyber range · online</span>
-                </div>
+          {/* Vignette overlay */}
+          <div className="hero-fullscreen__vignette" />
 
-                <h1 id="hero-title" className="landing-hero__title">
-                  Security testing that doesn't{" "}
-                  <span className="landing-hero__title-accent">leave the sandbox.</span>
-                </h1>
+          {/* Foreground UI Layer */}
+          <div className="hero-fullscreen__overlay">
+            {/* Top Tags Bar */}
+            <div className="hero-fullscreen__top-tags">
+              <span className="hero__eyebrow--warm">
+                <Icon name="shield-check" size={13} />
+                Dual-Swarm Invariant · Sovereign Defense
+              </span>
+              <span className="hero-fullscreen__badge">
+                <span className="dot" />
+                Air-Gapped Simulation Arena · Zero Host Egress
+              </span>
+            </div>
 
-                <p className="landing-hero__sub">
-                  Citadel runs two autonomous agent swarms in an air-gapped closed loop — one finds
-                  vulnerabilities in your code, the other synthesizes verified patches and proves them fixed.
-                  Zero external egress.
-                </p>
+            {/* Central Action Dock (Shifted down for unobstructed 3D torus breathing room) */}
+            <div className="hero-fullscreen__dock">
+              <h1 id="hero-title" className="sr-only">
+                Citadel — Autonomous Defensive Cyber Range
+              </h1>
 
-                <div className="landing-hero__ctas">
-                  <Button
-                    to="/console"
-                    size="lg"
-                    variant="primary"
-                    iconRight="arrow-right"
-                  >
-                    Open the console
-                  </Button>
-                  <Button
-                    to="/console/live"
-                    size="lg"
-                    variant="ghost"
-                    icon="folder"
-                  >
-                    Scan a codebase
-                  </Button>
-                  <Button
-                    to="/architecture"
-                    size="lg"
-                    variant="ghost"
-                    icon="book"
-                  >
-                    System design
-                  </Button>
-                </div>
-
-                <div className="landing-hero__proof">
-                  <div>
-                    <b>11</b>
-                    <span>Specialist agents</span>
-                  </div>
-                  <div>
-                    <b>4</b>
-                    <span>CWE classes covered</span>
-                  </div>
-                  <div>
-                    <b>SHA-256</b>
-                    <span>Chained audit ledger</span>
-                  </div>
-                  <div>
-                    <b>Zero</b>
-                    <span>External network egress</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right: Interactive 3D Cyber Core & Terminal Showcase */}
-              <div className="landing-hero__terminal">
-                <div className="hero-showcase-card">
-                  <div className="hero-showcase-header">
-                    <div className="hero-showcase-tabs">
-                      <button
-                        type="button"
-                        className={cn("hero-showcase-tab", heroTab === "3d" && "is-active")}
-                        onClick={() => setHeroTab("3d")}
-                      >
-                        <Icon name="shield-check" size={13} />
-                        <span>3D Defense Core</span>
-                      </button>
-                      <button
-                        type="button"
-                        className={cn("hero-showcase-tab", heroTab === "terminal" && "is-active")}
-                        onClick={() => setHeroTab("terminal")}
-                      >
-                        <Icon name="terminal" size={13} />
-                        <span>Live AST Terminal</span>
-                      </button>
-                    </div>
-                    <Pill tone="live" icon="shield-check">Air-Gapped</Pill>
-                  </div>
-
-                  {heroTab === "3d" ? (
-                    <div className="hero-3d-stage">
-                      <div className="hero-3d-canvas-wrap">
-                        <FloatingGlassIcon
-                          text="CITADEL"
-                          shape={hero3dShape}
-                          size={1.1}
-                          depth={1.15}
-                          chromatic={0.85}
-                          frost={0.12}
-                          speed={0.65}
-                          tint={[0.96, 0.9, 0.84]}
-                        />
-                      </div>
-
-                      <div className="hero-3d-overlay">
-                        <div className="hero-3d-controls">
-                          <button
-                            type="button"
-                            className={cn("hero-3d-btn", hero3dShape === "Sphere" && "is-active")}
-                            onClick={() => setHero3dShape("Sphere")}
-                            title="Sandbox Isolation Sphere"
-                          >
-                            <Icon name="shield" size={11} />
-                            <span>Sandbox</span>
-                          </button>
-                          <button
-                            type="button"
-                            className={cn("hero-3d-btn", hero3dShape === "Torus" && "is-active")}
-                            onClick={() => setHero3dShape("Torus")}
-                            title="Dual-Swarm Invariant Loop"
-                          >
-                            <Icon name="workflow" size={11} />
-                            <span>Swarm Loop</span>
-                          </button>
-                          <button
-                            type="button"
-                            className={cn("hero-3d-btn", hero3dShape === "X" && "is-active")}
-                            onClick={() => setHero3dShape("X")}
-                            title="Air-Gap Boundary"
-                          >
-                            <Icon name="lock" size={11} />
-                            <span>Air-Gap</span>
-                          </button>
-                        </div>
-                        <div className="hero-3d-cue">
-                          <Icon name="scan" size={10} />
-                          <span>Interactive 3D · Drag to rotate perimeter</span>
-                        </div>
-                      </div>
-
-                      <div className="hero-3d-footer">
-                        <div>
-                          <span className="mono">ISOLATION</span>
-                          <b>Enforced (0 egress)</b>
-                        </div>
-                        <div>
-                          <span className="mono">LEDGER</span>
-                          <b>SHA-256 Sealed</b>
-                        </div>
-                        <div>
-                          <span className="mono">ANALYSIS</span>
-                          <b>Static AST only</b>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="terminal-card__body">
-                      <div className="terminal-line terminal-line--done">
-                        <Icon name="check-circle" size={12} />
-                        <span className="terminal-line__agent">SurfaceMapper</span>
-                        <span className="terminal-line__msg">mapped 47 endpoints, 12 auth guards</span>
-                      </div>
-                      <div className="terminal-line terminal-line--done">
-                        <Icon name="check-circle" size={12} />
-                        <span className="terminal-line__agent">StaticAuditor</span>
-                        <span className="terminal-line__msg">found CWE-89 · CWE-502 · CWE-79</span>
-                      </div>
-                      <div className="terminal-line terminal-line--done">
-                        <Icon name="check-circle" size={12} />
-                        <span className="terminal-line__agent">RiskPrioritizer</span>
-                        <span className="terminal-line__msg">CRITICAL: SQLi in /api/users</span>
-                      </div>
-                      <div className="terminal-line terminal-line--active">
-                        <span className="terminal-spinner" aria-hidden="true" />
-                        <span className="terminal-line__agent">PatchGenerator</span>
-                        <span className="terminal-line__msg">synthesizing parameterised query…</span>
-                      </div>
-                      <div className="terminal-line terminal-line--pending">
-                        <span className="terminal-dot" aria-hidden="true" />
-                        <span className="terminal-line__agent">ValidationTesting</span>
-                        <span className="terminal-line__msg">waiting for patch diff…</span>
-                      </div>
-                      <div className="terminal-line terminal-line--pending">
-                        <span className="terminal-dot" aria-hidden="true" />
-                        <span className="terminal-line__agent">Deploy & Rollback</span>
-                        <span className="terminal-line__msg">standby · atomic apply queued</span>
-                      </div>
-
-                      <div className="terminal-card__diff">
-                        <div className="diff-line diff-line--del">
-                          − query = f"SELECT * WHERE id = '{"{id}"}'
-                        </div>
-                        <div className="diff-line diff-line--add">
-                          + cursor.execute(query, ({"{id}"},))
-                        </div>
-                      </div>
-
-                      <div className="terminal-card__footer">
-                        <Icon name="lock" size={11} />
-                        <span>Isolated workspace · no external calls</span>
-                        <span className="terminal-card__hash">
-                          sha256:{state.audit[state.audit.length - 1]?.entryHash?.slice(0, 10) ?? "genesis"}…
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+              <div className="hero-fullscreen__ctas">
+                <Button
+                  to="/console"
+                  size="lg"
+                  iconRight="arrow-right"
+                  className="btn--originkit-primary"
+                  transition
+                >
+                  Enter the range
+                </Button>
+                <Button
+                  to="/console/live"
+                  size="lg"
+                  icon="folder"
+                  className="btn--originkit-ghost"
+                  transition
+                >
+                  Remediate Codebase
+                </Button>
+                <Button
+                  to="/architecture"
+                  size="lg"
+                  icon="book"
+                  variant="ghost"
+                >
+                  Platform Architecture
+                </Button>
               </div>
             </div>
-          </div>
 
-          {/* Scroll hint */}
-          <a href="#overview" className="landing-hero__scroll" aria-label="Scroll to learn more">
-            <span>Explore defensive architecture</span>
-            <Icon name="chevron-down" size={14} />
-          </a>
+            {/* Scroll down prompt */}
+            <a href="#overview" className="hero-fullscreen__scroll" aria-label="Scroll to explore platform">
+              <span>Explore Defensive Architecture</span>
+              <Icon name="chevron-down" size={14} />
+            </a>
+          </div>
+        </section>
+
+        {/* ================================================================
+            MISSION NARRATIVE INTRO (Shifted below hero for clean 3D focus)
+            ================================================================ */}
+        <section className="section hero-narrative-section" id="overview">
+          <div className="container">
+            <Reveal className="hero-narrative-card">
+              <div className="hero-narrative-card__lead">
+                <span className="hero__eyebrow--warm">
+                  <Icon name="shield-check" size={13} />
+                  Architectural Security Governance
+                </span>
+                <h2 className="hero-narrative-card__heading">
+                  Preserve the boundary <span className="gradient-text">before the breach.</span>
+                </h2>
+              </div>
+              <p className="hero-narrative-card__sub">
+                An isolated cyber arena where autonomous swarms model adversarial exploits,
+                synthesize verified cryptographic patches, and seal defenses in an immutable audit ledger.
+              </p>
+              <div className="hero-narrative-card__pills">
+                <span className="hero-narrative-card__pill">
+                  <Icon name="shield" size={12} />
+                  Mode 01 · Closed-Loop Swarm Simulation
+                </span>
+                <span className="hero-narrative-card__pill">
+                  <Icon name="folder" size={12} />
+                  Mode 02 · Live Codebase Auto-Remediation
+                </span>
+                <span className="hero-narrative-card__pill">
+                  <Icon name="fingerprint" size={12} />
+                  Cryptographic SHA-256 Ledger Chain
+                </span>
+              </div>
+            </Reveal>
+          </div>
         </section>
 
         {/* ----------------------------------------------------------------
@@ -440,208 +251,56 @@ export default function Landing() {
         </div>
 
         {/* ================================================================
-            HOW IT WORKS — 3-UP FEATURE ROW
+            ORIGINKIT 3-UP FEATURE ROW WITH COLOR ACCENT BARS
             ================================================================ */}
-        <section id="overview" className="section platform-section" style={{ borderTop: "1px solid var(--line)" }}>
+        <section id="features" className="section platform-section" style={{ borderTop: "1px solid var(--line)" }}>
           <div className="container">
             <Reveal className="section-head section-head--split">
               <div className="section-head__lead">
-                <span className="eyebrow">Defensive engineering</span>
-                <h2 className="h2">
-                  Built for security teams who need proof, not promises.
+                <span className="hero__eyebrow--warm">Architectural Core Principles</span>
+                <h2 className="h2" style={{ fontFamily: "var(--font-display)", letterSpacing: "0.02em", fontSize: "clamp(2.2rem, 4.5vw, 3.6rem)" }}>
+                  Engineered for Resilient Defense
                 </h2>
               </div>
               <p className="lede">
-                Citadel runs offensive analysis and defensive remediation in a
-                closed loop, inside a sandboxed environment. Every decision is
-                logged in a tamper-evident audit chain.
+                Architected from first principles for controlled educational simulation and enterprise security assurance.
+                Offensive AST audit swarms and defensive synthesis swarms interact inside isolated runtimes.
               </p>
             </Reveal>
 
             <div className="originkit-features">
               <Reveal className="originkit-feature-card" delay={40}>
                 <span className="k" />
-                <h3>Closed-loop simulation</h3>
+                <h3>Closed-Loop Simulation</h3>
                 <p>
-                  Five analysis agents traverse your ASTs to surface seeded
-                  vulnerabilities — SQLi, deserialisation, XSS, debug exposure —
-                  inside an isolated mock enterprise. Nothing touches live systems.
+                  Offensive analysis agents traverse abstract syntax trees to isolate seeded vulnerabilities (CWE-89, CWE-295, CWE-502, CWE-489)
+                  inside an isolated mock enterprise with zero host exposure.
                 </p>
               </Reveal>
 
               <Reveal className="originkit-feature-card" delay={120}>
                 <span className="k" />
-                <h3>Live workspace remediation</h3>
+                <h3>Live Workspace Remediation</h3>
                 <p>
-                  Attach your project folder and six defense agents handle the
-                  rest: root-cause analysis, patch generation, staged validation,
-                  and atomic deployment — with automatic rollback on failure.
+                  Attach your project directory to run non-destructive AST audits.
+                  Multi-pass remediation synthesizes minimal, verified unified diffs, stages changes in memory, and validates complete resolution.
                 </p>
               </Reveal>
 
               <Reveal className="originkit-feature-card" delay={200}>
                 <span className="k" />
-                <h3>Cryptographic audit chain</h3>
+                <h3>Cryptographic Audit Chain</h3>
                 <p>
-                  Every finding, diff, test result, and approval is SHA-256
-                  chained in a tamper-evident ledger. If a single entry changes,
-                  the chain breaks and you'll know about it.
+                  Every root-cause verdict, unified patch diff, verification suite run, and rollback state is SHA-256 chained in
+                  a tamper-evident audit ledger with human-in-the-loop approval gates.
                 </p>
-              </Reveal>
-            </div>
-          </div>
-        </section>
-
-        {/* ================================================================
-            INTERACTIVE 3D DEFENSIVE PERIMETER ARENA
-            ================================================================ */}
-        <section id="arena-3d" className="section arena-3d-section">
-          <div className="container">
-            <Reveal className="section-head section-head--split">
-              <div className="section-head__lead">
-                <span className="eyebrow">Interactive 3D range node</span>
-                <h2 className="h2">
-                  Test the sovereign perimeter.
-                </h2>
-              </div>
-              <p className="lede">
-                Simulate adversarial attack probes against the range in real time.
-                Observe how the dual-swarm architecture traps, synthesizes, and seals
-                defenses without letting any request touch the external host.
-              </p>
-            </Reveal>
-
-            <div className="arena-3d-grid">
-              {/* Left: 3D interactive model */}
-              <Reveal className="arena-3d-card" delay={40}>
-                <div className="arena-3d-card__head">
-                  <div className="row gap-8">
-                    <span className="score-dot bg-mint" />
-                    <span className="mono tiny">CITADEL_PERIMETER_v1</span>
-                  </div>
-                  <div className="row gap-6">
-                    <button
-                      type="button"
-                      className={cn("arena-shape-btn", arenaShape === "Torus" && "is-active")}
-                      onClick={() => setArenaShape("Torus")}
-                    >
-                      Torus (Loop)
-                    </button>
-                    <button
-                      type="button"
-                      className={cn("arena-shape-btn", arenaShape === "Sphere" && "is-active")}
-                      onClick={() => setArenaShape("Sphere")}
-                    >
-                      Sphere (Sandbox)
-                    </button>
-                    <button
-                      type="button"
-                      className={cn("arena-shape-btn", arenaShape === "X" && "is-active")}
-                      onClick={() => setArenaShape("X")}
-                    >
-                      X (Air Gap)
-                    </button>
-                  </div>
-                </div>
-
-                <div className="arena-3d-viewport">
-                  <FloatingGlassIcon
-                    text="SOVEREIGN"
-                    shape={arenaShape}
-                    size={1.12}
-                    depth={1.2}
-                    chromatic={1.05}
-                    frost={0.14}
-                    speed={0.6}
-                    tint={[0.92, 0.84, 0.78]}
-                  />
-                  <div className="arena-3d-badge">
-                    <Icon name="scan" size={11} />
-                    <span>Drag 3D model to inspect refractive dispersion</span>
-                  </div>
-                </div>
-
-                <div className="arena-3d-card__foot">
-                  <div className="arena-stat">
-                    <span>HOST EGRESS</span>
-                    <b>0.00 KB (BLOCKED)</b>
-                  </div>
-                  <div className="arena-stat">
-                    <span>INVARIANT</span>
-                    <b>STRICT CONFINEMENT</b>
-                  </div>
-                  <div className="arena-stat">
-                    <span>LEDGER CHAIN</span>
-                    <b>VERIFIED HASH</b>
-                  </div>
-                </div>
-              </Reveal>
-
-              {/* Right: Attack probe scenario console */}
-              <Reveal className="arena-probe-console" delay={120}>
-                <div className="arena-probe-header">
-                  <div>
-                    <span className="eyebrow">Interactive probe tester</span>
-                    <h3>Simulate attack vector</h3>
-                  </div>
-                  <Pill tone={isProbing ? "high" : "live"} icon="shield-check">
-                    {isProbing ? "Intercepting..." : "Perimeter Armed"}
-                  </Pill>
-                </div>
-
-                <div className="arena-probe-selector">
-                  {ATTACK_SCENARIOS.map((scenario) => (
-                    <button
-                      key={scenario.id}
-                      type="button"
-                      className={cn(
-                        "arena-scenario-btn",
-                        activeScenario.id === scenario.id && "is-active",
-                      )}
-                      onClick={() => triggerProbe(scenario)}
-                    >
-                      <div className="row spread align-center">
-                        <span className="arena-scenario-cwe">{scenario.cwe}</span>
-                        <span className="arena-scenario-tag">Probe</span>
-                      </div>
-                      <b>{scenario.name}</b>
-                    </button>
-                  ))}
-                </div>
-
-                <div className="arena-probe-result">
-                  <div className="arena-result-row">
-                    <span className="mono muted">TARGET SURFACE</span>
-                    <span className="mono">{activeScenario.target}</span>
-                  </div>
-                  <div className="arena-result-row">
-                    <span className="mono muted">SIMULATED PAYLOAD</span>
-                    <span className="mono arena-payload">{activeScenario.payload}</span>
-                  </div>
-                  <div className="arena-result-row">
-                    <span className="mono muted">REMEDIATION OUTCOME</span>
-                    <span>{activeScenario.response}</span>
-                  </div>
-
-                  <div className="arena-diff-box">
-                    <div className="mono tiny muted mb-4">SYNTHESIZED SAFE CONTRACT</div>
-                    <pre className="mono">{activeScenario.diff}</pre>
-                  </div>
-
-                  <div className="arena-receipt">
-                    <Icon name="check-circle" size={13} />
-                    <span>
-                      Intercepted by AST guard · Sealed into SHA-256 chained audit trail · 0 host egress
-                    </span>
-                  </div>
-                </div>
               </Reveal>
             </div>
           </div>
         </section>
 
         {/* ----------------------------------------------------------------
-            Platform capabilities deep dive
+            Platform Capabilities Deep Dive
             ---------------------------------------------------------------- */}
         <section id="platform" className="section platform-section">
           <div className="container">
@@ -655,9 +314,9 @@ export default function Landing() {
                 </h2>
               </div>
               <p className="lede">
-                An analysis swarm finds what's wrong. A defense swarm proves
-                it can be fixed. A scoring judge evaluates the loop against
-                ground truth. The ledger keeps everyone honest.
+                A security analysis swarm finds what is wrong. A defense swarm
+                proves it can be fixed. The judge scores the loop against ground
+                truth, and the ledger keeps everyone honest.
               </p>
             </Reveal>
 
@@ -672,7 +331,7 @@ export default function Landing() {
                 <h3>Static, by design.</h3>
                 <p>
                   Agents traverse ASTs, structure and configuration — never
-                  weaponised payloads. Every finding carries a file, a line and
+                  weaponized payloads. Every finding carries a file, a line and
                   a remediation contract.
                 </p>
                 <div className="cap-card__visual cap-card__visual--surface">
@@ -738,21 +397,23 @@ export default function Landing() {
         </section>
 
         {/* ----------------------------------------------------------------
-            Specialist agents
+            Specialist Minds Swarms Section
             ---------------------------------------------------------------- */}
         <section id="swarms" className="section swarm-section">
           <div className="container">
             <Reveal className="section-head section-head--split">
               <div className="section-head__lead">
-                <span className="eyebrow">The agents</span>
+                <span className="eyebrow">The swarms</span>
                 <h2 className="h2">
-                  Eleven focused agents.<br />One shared goal.
+                  Specialist minds.
+                  <br />
+                  Fixed roles.
                 </h2>
               </div>
               <p className="lede">
-                Narrow agents outperform generalists because they can't
-                overstep. Each agent has a typed input, a typed output, and
-                a strict tool allowlist. No agent touches what it doesn't own.
+                Eleven narrow agents beat one generalist. Each runs inside a
+                tool allowlist, reports structured output, and hands the next
+                agent a typed artifact.
               </p>
             </Reveal>
 
@@ -772,10 +433,7 @@ export default function Landing() {
                         {String(index + 1).padStart(2, "0")}
                       </span>
                       <div>
-                        <h4>
-                          {agent.name}
-                          <span className="agent-row__role"> · {agent.role}</span>
-                        </h4>
+                        <h4>{agent.name}</h4>
                         <p>{agent.copy}</p>
                       </div>
                       <span className="agent-row__chip">{agent.chip}</span>
@@ -788,7 +446,7 @@ export default function Landing() {
                 <div className="swarm-panel__head">
                   <div>
                     <span className="eyebrow">Defensive response</span>
-                    <h3 className="h3">Fix it without breaking it.</h3>
+                    <h3 className="h3">Heal it without breaking it.</h3>
                   </div>
                   <Pill tone="violet" icon="zap">
                     06 agents
@@ -801,10 +459,7 @@ export default function Landing() {
                         {String(index + 1).padStart(2, "0")}
                       </span>
                       <div>
-                        <h4>
-                          {agent.name}
-                          <span className="agent-row__role"> · {agent.role}</span>
-                        </h4>
+                        <h4>{agent.name}</h4>
                         <p>{agent.copy}</p>
                       </div>
                       <span className="agent-row__chip">{agent.chip}</span>
@@ -833,29 +488,29 @@ export default function Landing() {
         </section>
 
         {/* ----------------------------------------------------------------
-            Safety & governance
+            Safety & Governance Section
             ---------------------------------------------------------------- */}
         <section id="governance" className="section governance-section">
           <div className="container governance">
             <Reveal className="governance__copy">
-              <span className="eyebrow">Safety & governance</span>
+              <span className="eyebrow">Safety &amp; governance</span>
               <h2 className="h2">
                 Nothing moves
                 <br />
                 without a receipt.
               </h2>
               <p className="lede">
-                Autonomous systems need accountability. Six independent controls
-                wrap every tool call, file write, and approval step. The ledger
-                proves what happened after the fact — not just what was intended.
+                Autonomy is only useful if it is accountable. Six independent
+                controls wrap every tool call, file write and approval — and the
+                ledger proves it after the fact.
               </p>
               <div className="control-list">
                 {[
                   ["network", "Network isolation", "Loopback targets only"],
                   ["sliders", "Tool allowlist", "Role-scoped operations"],
                   ["users", "Human gate", "Approve before deploy"],
-                  ["power", "Kill switch", "Halt the entire range"],
-                  ["message", "Prompt sanitizer", "Block injection attempts"],
+                  ["power", "Kill switch", "Halt the whole range"],
+                  ["message", "Prompt sanitizer", "Neutralize injection"],
                   ["fingerprint", "Immutable ledger", "SHA-256 hash chain"],
                 ].map(([icon, title, copy]) => (
                   <div className="control-item" key={title}>
@@ -923,7 +578,7 @@ export default function Landing() {
         </section>
 
         {/* ----------------------------------------------------------------
-            Evidence / live posture
+            Evidence & Live Posture HUD Section
             ---------------------------------------------------------------- */}
         <section className="section proof-section">
           <div className="container">
@@ -959,7 +614,8 @@ export default function Landing() {
                       MEDIUM:
                         findings.filter((f) => f.severity === "MEDIUM").length ||
                         1,
-                      LOW: findings.filter((f) => f.severity === "LOW").length || 1,
+                      LOW:
+                        findings.filter((f) => f.severity === "LOW").length || 1,
                     }}
                     total={Math.max(findings.length, 4)}
                   />
@@ -1022,7 +678,7 @@ export default function Landing() {
         </section>
 
         {/* ================================================================
-            CLOSING CALL TO ACTION
+            ORIGINKIT STYLE CLOSING CALL TO ACTION
             ================================================================ */}
         <section className="section section--tight">
           <div className="container">
@@ -1030,9 +686,9 @@ export default function Landing() {
               <div>
                 <h2>Audit. Patch. Prove. Repeat.</h2>
                 <p>
-                  The range is live. Run a closed-loop simulation on the mock
-                  enterprise, or connect your local codebase for deterministic
-                  automated remediation.
+                  The Citadel range is live and ready. Step inside to run a closed-loop simulation
+                  campaign on the synthetic mock enterprise, or connect your local folder for
+                  deterministic automated vulnerability remediation.
                 </p>
               </div>
 
@@ -1045,7 +701,7 @@ export default function Landing() {
                     className="btn--originkit-primary"
                     transition
                   >
-                    Open the console
+                    Enter the range
                   </Button>
                   <Button
                     to="/console/live"
@@ -1054,7 +710,7 @@ export default function Landing() {
                     className="btn--originkit-ghost"
                     transition
                   >
-                    Scan a codebase
+                    Live Codebase
                   </Button>
                 </div>
                 <div className="originkit-cli-pill">

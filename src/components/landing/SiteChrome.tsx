@@ -6,10 +6,10 @@ import { useScrolled } from "../../lib/hooks";
 import { cn } from "../../lib/utils";
 
 const NAV_LINKS = [
-  { label: "Platform", to: "/#overview" },
-  { label: "Agents", to: "/#swarms" },
-  { label: "Governance", to: "/#governance" },
+  { label: "Platform", to: "/#platform" },
+  { label: "Swarms", to: "/#swarms" },
   { label: "Live Folder", to: "/console/live" },
+  { label: "Governance", to: "/#governance" },
   { label: "Architecture", to: "/architecture" },
 ];
 
@@ -31,12 +31,6 @@ export function SiteNav({ solid = false }: { solid?: boolean }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  // Lock body scroll when mobile menu is open
-  useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [open]);
-
   return (
     <header
       className={cn(
@@ -47,7 +41,7 @@ export function SiteNav({ solid = false }: { solid?: boolean }) {
     >
       <div className="site-nav__inner">
         <Link to="/" className="site-nav__brand" aria-label="Citadel home">
-          <BrandMark size={30} />
+          <BrandMark size={32} />
           <Wordmark />
         </Link>
 
@@ -72,7 +66,7 @@ export function SiteNav({ solid = false }: { solid?: boolean }) {
             transition
             className="site-nav__cta"
           >
-            Open console
+            Enter console
           </Button>
           <button
             type="button"
@@ -81,39 +75,31 @@ export function SiteNav({ solid = false }: { solid?: boolean }) {
             aria-expanded={open}
             onClick={() => setOpen((value) => !value)}
           >
-            <Icon name={open ? "close" : "menu"} size={17} />
+            <Icon name={open ? "close" : "menu"} size={18} />
           </button>
         </div>
       </div>
 
       {open && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="site-nav__backdrop"
-            onClick={() => setOpen(false)}
-            aria-hidden="true"
-          />
-          <div className="site-nav__sheet">
-            <nav aria-label="Mobile">
-              {NAV_LINKS.map((link) => (
-                <Link key={link.to} to={link.to} className="site-nav__sheet-link">
-                  {link.label}
-                  <Icon name="arrow-up-right" size={13} />
-                </Link>
-              ))}
-            </nav>
-            <Button
-              to="/console"
-              variant="primary"
-              block
-              iconRight="arrow-right"
-              transition
-            >
-              Open console
-            </Button>
-          </div>
-        </>
+        <div className="site-nav__sheet">
+          <nav aria-label="Mobile">
+            {NAV_LINKS.map((link) => (
+              <Link key={link.to} to={link.to} className="site-nav__sheet-link">
+                {link.label}
+                <Icon name="arrow-up-right" size={14} />
+              </Link>
+            ))}
+          </nav>
+          <Button
+            to="/console"
+            variant="primary"
+            block
+            iconRight="arrow-right"
+            transition
+          >
+            Enter console
+          </Button>
+        </div>
       )}
     </header>
   );
@@ -126,12 +112,12 @@ export function SiteFooter() {
         <div className="site-foot__grid">
           <div className="site-foot__brand">
             <Link to="/" className="site-foot__mark" aria-label="Citadel home">
-              <BrandMark size={30} />
+              <BrandMark size={32} />
               <Wordmark />
             </Link>
             <p>
               A closed-loop defensive cyber range. Static analysis, synthesized
-              patches, and independent verification — all inside a sealed sandbox.
+              patches and independent verification — inside a sealed sandbox.
             </p>
             <div className="site-foot__badges">
               <span className="pill">
