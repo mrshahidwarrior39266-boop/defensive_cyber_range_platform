@@ -4,8 +4,10 @@ import { BrandMark, Icon, Wordmark } from "../ui/Icon";
 import type { IconName } from "../ui/Icon";
 import { Button, Pill } from "../ui/primitives";
 import { useToast } from "../ui/overlays";
+import { useActionLock } from "../../lib/hooks";
 import { useRange } from "../../lib/simulation/store";
 import { pendingApprovals } from "../../lib/simulation/engine";
+import { CWE_ORDER } from "../../lib/simulation/project";
 import { cn, relativeTime } from "../../lib/utils";
 import "../../styles/console.css";
 
@@ -61,6 +63,7 @@ const NAV_GROUPS: Array<{
 function KillSwitchControl() {
   const { state, tripKillSwitch, resetKillSwitch } = useRange();
   const { push } = useToast();
+  const killLock = useActionLock();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("Emergency halt requested by operator");
   const wrapper = useRef<HTMLDivElement | null>(null);
@@ -86,12 +89,15 @@ function KillSwitchControl() {
       <button
         type="button"
         className="kill-reset"
+        disabled={killLock.busy}
         onClick={() => {
-          resetKillSwitch();
-          push({
-            title: "Kill switch reset",
-            message: "The range is ready for a new campaign.",
-            tone: "success",
+          void killLock.run(() => {
+            resetKillSwitch();
+            push({
+              title: "Kill switch reset",
+              message: "The range is ready for a new campaign.",
+              tone: "success",
+            });
           });
         }}
       >
@@ -143,14 +149,17 @@ function KillSwitchControl() {
               variant="danger"
               size="sm"
               icon="power"
+              disabled={killLock.busy}
               onClick={() => {
-                tripKillSwitch(reason || "Emergency halt requested by operator");
-                setOpen(false);
-                push({
-                  title: "Kill switch tripped",
-                  message:
-                    "All agent activity has been halted. Reset from Safety & governance.",
-                  tone: "error",
+                void killLock.run(() => {
+                  tripKillSwitch(reason || "Emergency halt requested by operator");
+                  setOpen(false);
+                  push({
+                    title: "Kill switch tripped",
+                    message:
+                      "All agent activity has been halted. Reset from Safety & governance.",
+                    tone: "error",
+                  });
                 });
               }}
             >
@@ -290,7 +299,7 @@ function Sidebar({
             <div className="sidebar__status-meta">
               <span>
                 <Icon name="shield-check" size={10} />
-                {state.remediatedCwes.length}/4 closed
+                {state.remediatedCwes.length}/{CWE_ORDER.length} closed
               </span>
               <span>{state.audit.length} sealed</span>
             </div>
@@ -317,18 +326,20 @@ export function ConsoleLayout() {
   const title = ROUTE_TITLES[location.pathname] ?? "Console";
   const posture = state.rounds.length
     ? state.rounds[state.rounds.length - 1].scorecard.securityPostureScore
-    : (state.remediatedCwes.length / 4) * 100;
+    : (state.remediatedCwes.length / CWE_ORDER.length) * 100;
 
   const status =
     state.killSwitch.tripped
       ? { label: "Range halted", tone: "critical" as const }
-      : state.status === "running"
-        ? { label: "Campaign running", tone: "live" as const }
-        : state.status === "complete"
-          ? { label: "Campaign complete", tone: "live" as const }
-          : state.status === "halted"
-            ? { label: "Campaign halted", tone: "critical" as const }
-            : { label: "Range ready", tone: "neutral" as const };
+      : isLiveMode
+        ? { label: "Live folder sandbox", tone: "neutral" as const }
+        : state.status === "running"
+          ? { label: "Campaign running", tone: "live" as const }
+          : state.status === "complete"
+            ? { label: "Campaign complete", tone: "live" as const }
+            : state.status === "halted"
+              ? { label: "Campaign halted", tone: "critical" as const }
+              : { label: "Range ready", tone: "neutral" as const };
 
   return (
     <div className="console">
@@ -358,14 +369,16 @@ export function ConsoleLayout() {
 
           <div className="topbar__right">
             <Pill tone={status.tone} className="topbar__status">
-              {state.status === "running" && <span className="dot" />}
+              {!isLiveMode && state.status === "running" && <span className="dot" />}
               {status.label}
             </Pill>
-            <div className="topbar__posture" title="Current security posture">
-              <Icon name="shield-check" size={13} />
-              <span>{posture.toFixed(0)}%</span>
-              <em>posture</em>
-            </div>
+            {!isLiveMode && (
+              <div className="topbar__posture" title="Current security posture">
+                <Icon name="shield-check" size={13} />
+                <span>{posture.toFixed(0)}%</span>
+                <em>posture</em>
+              </div>
+            )}
             <KillSwitchControl />
             <Link
               to="/"
@@ -380,7 +393,7 @@ export function ConsoleLayout() {
           </div>
         </header>
 
-        {state.status === "running" && (
+        {!isLiveMode && state.status === "running" && (
           <div className="range-progress" aria-hidden="true">
             <span style={{ width: `${Math.round(state.progress * 100)}%` }} />
             <em>{state.phaseLabel}</em>

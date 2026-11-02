@@ -790,7 +790,7 @@ export function planCampaign(options: PlanOptions): PlannedCampaign {
   log(
     "SimulationOrchestrator",
     "finalize_simulation",
-    `Campaign sealed · ${remediated.length}/4 CWE classes remediated · audit chain verified.`,
+    `Campaign sealed · ${remediated.length}/${CWE_ORDER.length} CWE classes remediated · audit chain verified.`,
     "success",
     options.now + options.rounds * 2000,
   );

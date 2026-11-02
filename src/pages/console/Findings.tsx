@@ -12,7 +12,7 @@ import {
 import { Drawer, useToast } from "../../components/ui/overlays";
 import { CodeBlock } from "../../components/ui/code";
 import { Icon } from "../../components/ui/Icon";
-import { useDocumentTitle } from "../../lib/hooks";
+import { useActionLock, useDocumentTitle } from "../../lib/hooks";
 import {
   latestRound,
   roundWithFindings,
@@ -29,6 +29,7 @@ export default function Findings() {
   useDocumentTitle("Finding registry — Citadel");
   const { state } = useRange();
   const { push } = useToast();
+  const exportLock = useActionLock();
   const navigate = useNavigate();
 
   const initialRound =
@@ -179,7 +180,7 @@ export default function Findings() {
               variant="ghost"
               size="sm"
               icon="download"
-              onClick={exportSarif}
+              onClick={() => void exportLock.run(exportSarif)}
               disabled={!round?.findings.length}
             >
               Export SARIF

@@ -10,7 +10,7 @@ import { Drawer, useToast } from "../../components/ui/overlays";
 import { CodeBlock } from "../../components/ui/code";
 import { Icon } from "../../components/ui/Icon";
 import type { IconName } from "../../components/ui/Icon";
-import { useDocumentTitle } from "../../lib/hooks";
+import { useActionLock, useDocumentTitle } from "../../lib/hooks";
 import { useRange } from "../../lib/simulation/store";
 import type { AuditEntry } from "../../lib/simulation/types";
 import {
@@ -110,6 +110,7 @@ export default function Safety() {
   useDocumentTitle("Safety & governance — Citadel");
   const { state, tripKillSwitch, resetKillSwitch, verifyChain } = useRange();
   const { push } = useToast();
+  const safetyLock = useActionLock();
 
   const [tripOpen, setTripOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -169,23 +170,27 @@ export default function Safety() {
   };
 
   const handleTrip = () => {
-    tripKillSwitch(reason.trim() || "Emergency halt requested by operator");
-    setTripOpen(false);
-    setReason("");
-    push({
-      title: "Kill switch tripped",
-      message:
-        "All agent execution stopped. The halt is recorded in the audit ledger.",
-      tone: "error",
+    void safetyLock.run(() => {
+      tripKillSwitch(reason.trim() || "Emergency halt requested by operator");
+      setTripOpen(false);
+      setReason("");
+      push({
+        title: "Kill switch tripped",
+        message:
+          "All agent execution stopped. The halt is recorded in the audit ledger.",
+        tone: "error",
+      });
     });
   };
 
   const handleReset = () => {
-    resetKillSwitch();
-    push({
-      title: "Kill switch reset",
-      message: "The range is ready for a new campaign. Reset recorded.",
-      tone: "success",
+    void safetyLock.run(() => {
+      resetKillSwitch();
+      push({
+        title: "Kill switch reset",
+        message: "The range is ready for a new campaign. Reset recorded.",
+        tone: "success",
+      });
     });
   };
 
@@ -202,11 +207,13 @@ export default function Safety() {
               size="sm"
               icon="download"
               onClick={() => {
-                downloadJsonl(state.audit);
-                push({
-                  title: "Ledger exported",
-                  message: `${state.audit.length} hash-chained entries written as JSONL.`,
-                  tone: "success",
+                void safetyLock.run(() => {
+                  downloadJsonl(state.audit);
+                  push({
+                    title: "Ledger exported",
+                    message: `${state.audit.length} hash-chained entries written as JSONL.`,
+                    tone: "success",
+                  });
                 });
               }}
             >

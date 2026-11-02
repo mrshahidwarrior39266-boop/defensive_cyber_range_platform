@@ -12,3 +12,5 @@ createRoot(root).render(
     <App />
   </StrictMode>,
 );
+
+(window as Window & { __citadelBooted?: boolean }).__citadelBooted = true;

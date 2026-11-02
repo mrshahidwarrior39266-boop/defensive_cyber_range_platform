@@ -7,6 +7,7 @@ import { SiteFooter, SiteNav } from "../components/landing/SiteChrome";
 import { useDocumentTitle } from "../lib/hooks";
 import { useRange } from "../lib/simulation/store";
 import { verifyAuditChain } from "../lib/simulation/engine";
+import { CWE_ORDER } from "../lib/simulation/project";
 import { formatMs } from "../lib/utils";
 import "../styles/landing.css";
 
@@ -98,7 +99,7 @@ export default function Landing() {
   const lastRound = state.rounds[state.rounds.length - 1];
   const posture = lastRound
     ? lastRound.scorecard.securityPostureScore
-    : (state.remediatedCwes.length / 4) * 100;
+    : (state.remediatedCwes.length / CWE_ORDER.length) * 100;
   const auditCheck = useMemo(
     () => verifyAuditChain(state.audit),
     [state.audit],
@@ -108,7 +109,7 @@ export default function Landing() {
   const rounds = state.rounds;
   const trend = rounds.length
     ? rounds.map((round) => round.scorecard.securityPostureScore)
-    : [100];
+    : [posture];
   const findings = state.findings ?? [];
 
   return (
@@ -600,27 +601,22 @@ export default function Landing() {
                   value={posture}
                   size={218}
                   label="security posture"
-                  caption={`${state.remediatedCwes.length} / 4 CWE classes closed`}
+                  caption={`${state.remediatedCwes.length} / ${CWE_ORDER.length} CWE classes closed`}
                 />
                 <div className="proof__score-meta">
                   <SeverityBar
                     counts={{
-                      CRITICAL:
-                        findings.filter((f) => f.severity === "CRITICAL")
-                          .length || 1,
-                      HIGH:
-                        findings.filter((f) => f.severity === "HIGH").length ||
-                        1,
-                      MEDIUM:
-                        findings.filter((f) => f.severity === "MEDIUM").length ||
-                        1,
-                      LOW:
-                        findings.filter((f) => f.severity === "LOW").length || 1,
+                      CRITICAL: findings.filter((f) => f.severity === "CRITICAL")
+                        .length,
+                      HIGH: findings.filter((f) => f.severity === "HIGH").length,
+                      MEDIUM: findings.filter((f) => f.severity === "MEDIUM")
+                        .length,
+                      LOW: findings.filter((f) => f.severity === "LOW").length,
                     }}
-                    total={Math.max(findings.length, 4)}
+                    total={findings.length}
                   />
                   <span className="proof__note">
-                    Seeded weaknesses: CWE-89 · CWE-862 · CWE-79 · CWE-489
+                    Seeded weaknesses: {CWE_ORDER.join(" · ")}
                   </span>
                 </div>
               </div>
@@ -632,7 +628,7 @@ export default function Landing() {
                     <b>
                       {lastRound
                         ? `${lastRound.scorecard.discoveryRecallPct}%`
-                        : "100%"}
+                        : "—"}
                     </b>
                   </div>
                   <div>
@@ -640,7 +636,7 @@ export default function Landing() {
                     <b>
                       {lastRound
                         ? `${lastRound.scorecard.patchCorrectnessPct}%`
-                        : "100%"}
+                        : "—"}
                     </b>
                   </div>
                   <div>
@@ -648,7 +644,7 @@ export default function Landing() {
                     <b>
                       {lastRound
                         ? formatMs(lastRound.scorecard.meanTimeToRemediateMs)
-                        : "7.2ms"}
+                        : "—"}
                     </b>
                   </div>
                   <div>
@@ -661,14 +657,14 @@ export default function Landing() {
                   <div className="proof__trend-head">
                     <span>Posture across rounds</span>
                     <span className="mono">
-                      {rounds.length || 2} rounds · {state.lessons.length} lessons
+                      {rounds.length} rounds · {state.lessons.length} lessons
                     </span>
                   </div>
                   <LineChart
                     values={trend}
                     labels={rounds.length
                       ? rounds.map((round) => `R${String(round.roundNum).padStart(2, "0")}`)
-                      : ["R01", "R02"]}
+                      : ["CURRENT"]}
                     height={112}
                   />
                 </div>

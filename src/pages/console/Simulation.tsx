@@ -9,7 +9,7 @@ import {
 import { Gauge } from "../../components/ui/viz";
 import { Icon } from "../../components/ui/Icon";
 import { useToast } from "../../components/ui/overlays";
-import { useDocumentTitle } from "../../lib/hooks";
+import { useActionLock, useDocumentTitle } from "../../lib/hooks";
 import { latestRound } from "../../lib/simulation/engine";
 import { CWE_ORDER, PROJECT_FILES } from "../../lib/simulation/project";
 import { useRange } from "../../lib/simulation/store";
@@ -25,7 +25,7 @@ import {
 import "../../styles/pages.css";
 
 const PHASE_STEPS: Array<{ key: PhaseKey; label: string; hint: string }> = [
-  { key: "initialize", label: "Initialize sandbox", hint: "5 files cloned" },
+  { key: "initialize", label: "Initialize sandbox", hint: `${PROJECT_FILES.length} files cloned` },
   { key: "surface", label: "Surface mapping", hint: "AST inventory" },
   { key: "audit", label: "Static audit", hint: "CWE traversal" },
   { key: "prioritize", label: "Risk prioritization", hint: "CVSS ranking" },
@@ -88,6 +88,7 @@ export default function Simulation() {
     abortCampaign,
   } = useRange();
   const { push } = useToast();
+  const launchLock = useActionLock();
   const [rounds, setRounds] = useState(() =>
     Math.min(4, Math.max(1, state.campaignRounds || 2)),
   );
@@ -123,7 +124,7 @@ export default function Simulation() {
 
   const phase = configModified ? -1 : (PHASE_INDEX[state.phase] ?? -1);
 
-  const launch = async () => {
+  const launch = () => {
     if (running) return; // Guard against double-click
     if (state.killSwitch.tripped) {
       push({
@@ -133,14 +134,16 @@ export default function Simulation() {
       });
       return;
     }
-    push({
-      title: "Campaign launched",
-      message: `${rounds} round${rounds === 1 ? "" : "s"} · ${
-        MODES.find((item) => item.id === mode)?.title
-      } policy. Sandbox restored to the seeded baseline.`,
-      tone: "info",
+    void launchLock.run(async () => {
+      push({
+        title: "Campaign launched",
+        message: `${rounds} round${rounds === 1 ? "" : "s"} · ${
+          MODES.find((item) => item.id === mode)?.title
+        } policy. Sandbox restored to the seeded baseline.`,
+        tone: "info",
+      });
+      await startCampaign({ rounds, approvalMode: mode });
     });
-    await startCampaign({ rounds, approvalMode: mode });
   };
 
   return (
@@ -308,7 +311,7 @@ export default function Simulation() {
                   variant="primary"
                   icon="play"
                   onClick={launch}
-                  disabled={state.killSwitch.tripped}
+                  disabled={state.killSwitch.tripped || launchLock.busy}
                 >
                   Launch campaign
                 </Button>

@@ -23,6 +23,12 @@ import { useRange } from "../../lib/simulation/store";
 import { cn, formatMs } from "../../lib/utils";
 import "../../styles/pages.css";
 
+const SURFACE_CWE: Record<string, "CWE-89" | "CWE-79" | "CWE-862"> = {
+  search_directory: "CWE-89",
+  render_search_banner: "CWE-79",
+  export_confidential_documents: "CWE-862",
+};
+
 export default function Enterprise() {
   useDocumentTitle("Mock enterprise — Citadel");
   const { state } = useRange();
@@ -49,6 +55,14 @@ export default function Enterprise() {
   const openCwes = file.seededCwes.filter(
     (cwe) => !state.remediatedCwes.includes(cwe),
   );
+
+  const guardedSurfaces = SURFACES.filter((surface) => {
+    const surfaceCwe = SURFACE_CWE[surface.functionName];
+    return (
+      surface.hasAuthGuard ||
+      Boolean(surfaceCwe && state.remediatedCwes.includes(surfaceCwe))
+    );
+  }).length;
 
   const selectFile = (path: string) => {
     const next = new URLSearchParams();
@@ -101,7 +115,10 @@ export default function Enterprise() {
         </div>
         <div className="enterprise-banner__copy">
           <span className="eyebrow">AcmeCorp Internal Portal</span>
-          <h2>Five modules, four seeded weakness classes, zero external egress.</h2>
+          <h2>
+            {PROJECT_FILES.length} modules, {CWE_ORDER.length} seeded weakness
+            classes, zero external egress.
+          </h2>
           <p>
             The workspace source below is live: after a campaign deploys and
             verifies a patch, the remediated file is what you see here.
@@ -299,12 +316,10 @@ export default function Enterprise() {
           subtitle="Functions mapped by the AST surface scan"
           actions={
             <Pill
-              tone={state.remediatedCwes.includes("CWE-862") ? "live" : "critical"}
-              icon={state.remediatedCwes.includes("CWE-862") ? "shield-check" : "alert"}
+              tone={guardedSurfaces === SURFACES.length ? "live" : "critical"}
+              icon={guardedSurfaces === SURFACES.length ? "shield-check" : "alert"}
             >
-              {state.remediatedCwes.includes("CWE-862")
-                ? "1 authorization guard active"
-                : "0 authorization guards"}
+              {guardedSurfaces}/{SURFACES.length} surfaces guarded
             </Pill>
           }
         >
@@ -320,11 +335,10 @@ export default function Enterprise() {
               </thead>
               <tbody>
                 {SURFACES.map((surface) => {
-                  // After CWE-862 remediation, delete_user_record gains its auth guard
-                  const authRemediated =
-                    state.remediatedCwes.includes("CWE-862") &&
-                    surface.functionName === "delete_user_record";
-                  const isGuarded = surface.hasAuthGuard || authRemediated;
+                  const surfaceCwe = SURFACE_CWE[surface.functionName];
+                  const isGuarded =
+                    surface.hasAuthGuard ||
+                    Boolean(surfaceCwe && state.remediatedCwes.includes(surfaceCwe));
                   return (
                     <tr key={`${surface.endpoint}-${surface.functionName}`}>
                       <td className="cell-mono strong">{surface.endpoint}</td>

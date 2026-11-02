@@ -10,7 +10,7 @@ import {
 import { Meter } from "../../components/ui/viz";
 import { Icon } from "../../components/ui/Icon";
 import { useToast } from "../../components/ui/overlays";
-import { useDocumentTitle } from "../../lib/hooks";
+import { useActionLock, useDocumentTitle } from "../../lib/hooks";
 import {
   latestRound,
 } from "../../lib/simulation/engine";
@@ -42,6 +42,7 @@ export default function Memory() {
   useDocumentTitle("Shared memory — Citadel");
   const { state, verifyChain } = useRange();
   const { push } = useToast();
+  const exportLock = useActionLock();
 
   const latest = latestRound(state);
   const openCwes = useMemo(
@@ -92,7 +93,12 @@ export default function Memory() {
         description="The range remembers. Every round writes findings, applied patches and verification outcomes into a persistent store, then recalls those lessons when the same weakness resurfaces."
         actions={
           <>
-            <Button variant="quiet" size="sm" icon="download" onClick={handleExport}>
+            <Button
+              variant="quiet"
+              size="sm"
+              icon="download"
+              onClick={() => void exportLock.run(handleExport)}
+            >
               Export memory
             </Button>
             <Button

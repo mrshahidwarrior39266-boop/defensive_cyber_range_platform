@@ -774,7 +774,7 @@
   /* Mobile: Ensure hamburger menu button is always tappable above status pills */
   .topbar__menu {
     position: relative;
-    z-index: 60;
+    z-index: 80;
     pointer-events: auto;
     flex-shrink: 0;
   }
@@ -782,13 +782,27 @@
     position: relative;
     z-index: 60;
     pointer-events: auto;
-    flex-shrink: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .topbar__crumb {
+    flex: 1 1 auto;
+    min-width: 0;
   }
   .topbar__right {
     position: relative;
     z-index: 50;
-    overflow: hidden;
-    max-width: calc(100% - 120px);
+    overflow: visible;
+    max-width: none;
+    min-width: 0;
+    flex: 0 0 auto;
+    pointer-events: none;
+  }
+  .topbar__right > * {
+    pointer-events: auto;
+  }
+  .topbar {
+    overflow: visible;
   }
   .topbar__posture {
     display: none;

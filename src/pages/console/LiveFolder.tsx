@@ -3,7 +3,7 @@ import { PageHeader, Panel, Pill, SeverityPill, Stat, Button, EmptyState } from 
 import { Icon } from "../../components/ui/Icon";
 import { CodeBlock, DiffView } from "../../components/ui/code";
 import { Drawer, useToast } from "../../components/ui/overlays";
-import { useDocumentTitle } from "../../lib/hooks";
+import { useActionLock, useDocumentTitle } from "../../lib/hooks";
 import { cn } from "../../lib/utils";
 import "../../styles/pages.css";
 
@@ -27,6 +27,8 @@ interface LiveFinding {
     diff: string;
     patched_content: string;
     safe_auto: boolean;
+    old_text?: string;
+    new_text?: string;
   };
 }
 
@@ -123,6 +125,78 @@ function makeFindingId(ruleId: string, filePath: string, line: number): string {
   return `LF-${ruleId}-${cleanName}-L${line}`;
 }
 
+interface PatchApplication {
+  files: Record<string, string>;
+  applied: boolean;
+  reason?: string;
+}
+
+/**
+ * Apply a finding's deterministic replacement to the CURRENT file content.
+ * Patches are never applied from a stale scan snapshot, so fixing one finding
+ * cannot silently revert another fix in the same file.
+ */
+function applyFindingPatch(
+  files: Record<string, string>,
+  finding: LiveFinding,
+): PatchApplication {
+  const patch = finding.patch;
+  if (!patch?.old_text || !patch.new_text || patch.old_text === patch.new_text) {
+    return {
+      files,
+      applied: false,
+      reason: "Review this finding manually: no deterministic patch is registered.",
+    };
+  }
+
+  const current = files[finding.file_path];
+  if (typeof current !== "string") {
+    return {
+      files,
+      applied: false,
+      reason: "The target file is no longer in the workspace. Re-scan before applying.",
+    };
+  }
+
+  const index = current.indexOf(patch.old_text);
+  if (index >= 0) {
+    return {
+      files: {
+        ...files,
+        [finding.file_path]:
+          current.slice(0, index) +
+          patch.new_text +
+          current.slice(index + patch.old_text.length),
+      },
+      applied: true,
+    };
+  }
+
+  // Tolerate CRLF imports from Windows.
+  const normalized = current.replace(/\r\n/g, "\n");
+  const oldText = patch.old_text.replace(/\r\n/g, "\n");
+  const newText = patch.new_text.replace(/\r\n/g, "\n");
+  const normalizedIndex = normalized.indexOf(oldText);
+  if (normalizedIndex >= 0) {
+    return {
+      files: {
+        ...files,
+        [finding.file_path]:
+          normalized.slice(0, normalizedIndex) +
+          newText +
+          normalized.slice(normalizedIndex + oldText.length),
+      },
+      applied: true,
+    };
+  }
+
+  return {
+    files,
+    applied: false,
+    reason: "The source changed since this finding was scanned. Re-scan and review the current diff.",
+  };
+}
+
 function runInBrowserScan(files: Record<string, string>): {
   findings: LiveFinding[];
   durationMs: number;
@@ -165,6 +239,8 @@ function runInBrowserScan(files: Record<string, string>): {
             diff: `--- a/${filePath}\n+++ b/${filePath}\n@@ -${lineNum},2 +${lineNum},1 @@\n-    query = f"SELECT id, username, role, email FROM users WHERE username = '{username}'"\n-    cursor.execute(query)\n+    cursor.execute("SELECT id, username, role, email FROM users WHERE username = ?", (username,))`,
             patched_content: patchedContent,
             safe_auto: true,
+            old_text: `    query = f"SELECT id, username, role, email FROM users WHERE username = '{username}'"\n    cursor.execute(query)`,
+            new_text: `    cursor.execute("SELECT id, username, role, email FROM users WHERE username = ?", (username,))`,
           },
         });
       }
@@ -191,6 +267,8 @@ function runInBrowserScan(files: Record<string, string>): {
             diff: `--- a/${filePath}\n+++ b/${filePath}\n@@ -${lineNum},1 +${lineNum},1 @@\n-${line}\n+${line.replace(/verify\s*=\s*False/g, "verify=True")}`,
             patched_content: patchedContent,
             safe_auto: true,
+            old_text: line,
+            new_text: line.replace(/verify\s*=\s*False/g, "verify=True"),
           },
         });
       }
@@ -217,6 +295,8 @@ function runInBrowserScan(files: Record<string, string>): {
             diff: `--- a/${filePath}\n+++ b/${filePath}\n@@ -${lineNum},1 +${lineNum},1 @@\n-${line}\n+${line.replace(/yaml\.load\s*\(/g, "yaml.safe_load(")}`,
             patched_content: patchedContent,
             safe_auto: true,
+            old_text: line,
+            new_text: line.replace(/yaml\.load\s*\(/g, "yaml.safe_load("),
           },
         });
       }
@@ -246,12 +326,21 @@ function runInBrowserScan(files: Record<string, string>): {
             diff: `--- a/${filePath}\n+++ b/${filePath}\n@@ -${lineNum},1 +${lineNum},1 @@\n-${line}\n+${line.replace(/True/g, "False")}`,
             patched_content: patchedContent,
             safe_auto: true,
+            old_text: line,
+            new_text: line.replace(/True/g, "False"),
           },
         });
       }
 
       // CWE-862 (Missing Authorization)
       if (/def delete_user_record/i.test(line)) {
+        const authBlock = lines
+          .slice(index, Math.min(lines.length, index + 10))
+          .join("\n");
+        const hasAuthGuard =
+          /requester_role\s*!=\s*["']admin["']/.test(authBlock) ||
+          /raise\s+PermissionError\s*\(/.test(authBlock);
+        if (hasAuthGuard) return;
         const patchedContent = files[filePath].replace(
           'def delete_user_record(requester_role, target_user_id):\n    # SEEDED_WEAKNESS: CWE-862 Missing Authorization Guard\n    # Note: Requires requester_role == \'admin\'\n    return {"deleted": target_user_id, "status": "success"}',
           'def delete_user_record(requester_role, target_user_id):\n    if requester_role != "admin":\n        raise PermissionError("Access denied: admin role required")\n    return {"deleted": target_user_id, "status": "success"}'
@@ -275,6 +364,8 @@ function runInBrowserScan(files: Record<string, string>): {
             diff: `--- a/${filePath}\n+++ b/${filePath}\n@@ -${lineNum},3 +${lineNum},4 @@\n def delete_user_record(requester_role, target_user_id):\n+    if requester_role != "admin":\n+        raise PermissionError("Access denied: admin role required")\n     return {"deleted": target_user_id, "status": "success"}`,
             patched_content: patchedContent,
             safe_auto: true,
+            old_text: `def delete_user_record(requester_role, target_user_id):\n    # SEEDED_WEAKNESS: CWE-862 Missing Authorization Guard\n    # Note: Requires requester_role == 'admin'\n    return {"deleted": target_user_id, "status": "success"}`,
+            new_text: `def delete_user_record(requester_role, target_user_id):\n    if requester_role != "admin":\n        raise PermissionError("Access denied: admin role required")\n    return {"deleted": target_user_id, "status": "success"}`,
           },
         });
       }
@@ -304,6 +395,8 @@ function runInBrowserScan(files: Record<string, string>): {
             diff: `--- a/${filePath}\n+++ b/${filePath}\n@@ -${lineNum},1 +${lineNum},2 @@\n+    safe_name = html.escape(username, quote=True)\n-    return f"<div class='profile'>Welcome back, {username}!</div>"\n+    return f"<div class='profile'>Welcome back, {safe_name}!</div>"`,
             patched_content: patchedContent,
             safe_auto: true,
+            old_text: `    return f"<div class='profile'>Welcome back, {username}!</div>"`,
+            new_text: `    safe_name = html.escape(username, quote=True)\n    return f"<div class='profile'>Welcome back, {safe_name}!</div>"`,
           },
         });
       }
@@ -330,6 +423,8 @@ function runInBrowserScan(files: Record<string, string>): {
             diff: `--- a/${filePath}\n+++ b/${filePath}\n@@ -${lineNum},1 +${lineNum},1 @@\n-${line}\n+${line.replace(/false/g, "true")}`,
             patched_content: patchedContent,
             safe_auto: true,
+            old_text: line,
+            new_text: line.replace(/rejectUnauthorized\s*:\s*false/g, "rejectUnauthorized: true"),
           },
         });
       }
@@ -371,6 +466,27 @@ function runInBrowserScan(files: Record<string, string>): {
           safe_auto: false,
         });
       }
+
+      // JS-EVAL-001 (CWE-95)
+      if (filePath.endsWith(".js") || filePath.endsWith(".jsx") || filePath.endsWith(".ts") || filePath.endsWith(".tsx")) {
+        if (/\beval\s*\(/i.test(line) || /new\s+Function\s*\(/i.test(line)) {
+          findings.push({
+            id: makeFindingId("JS-EVAL-001", filePath, lineNum),
+            rule_id: "JS-EVAL-001",
+            title: "Dynamic code execution via eval or Function",
+            severity: "HIGH",
+            category: "Injection",
+            cwe: "CWE-95",
+            description: "eval() and the Function constructor execute attacker-controlled strings as code.",
+            remediation: "Replace eval() with an explicit parser or a strict allow-list of operations.",
+            file_path: filePath,
+            line: lineNum,
+            column: 1,
+            snippet: line.trim(),
+            safe_auto: false,
+          });
+        }
+      }
     });
   }
 
@@ -381,6 +497,7 @@ function runInBrowserScan(files: Record<string, string>): {
 export default function LiveFolder() {
   useDocumentTitle("Live folder remediation — Citadel");
   const { push } = useToast();
+  const exportLock = useActionLock();
 
   const [activePreset, setActivePreset] = useState<"acme" | "gateway" | "node">("acme");
   const [workspaceFiles, setWorkspaceFiles] = useState<Record<string, string>>(PRESET_ACME);
@@ -408,6 +525,10 @@ export default function LiveFolder() {
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [isRemediating, setIsRemediating] = useState<boolean>(false);
   const isPatchingRef = useRef<Set<string>>(new Set());
+  const remediationRunningRef = useRef(false);
+  const baselineSetRef = useRef(false);
+  const [patchingIds, setPatchingIds] = useState<Set<string>>(() => new Set());
+  const [baselineFindingCount, setBaselineFindingCount] = useState<number>(0);
 
   const [findings, setFindings] = useState<LiveFinding[]>([]);
   const [scanElapsedMs, setScanElapsedMs] = useState<number>(0);
@@ -426,51 +547,6 @@ export default function LiveFolder() {
     resolvedRate: number;
   } | null>(null);
 
-  // Probe local daemon on mount
-  useEffect(() => {
-    let unmounted = false;
-    const checkDaemon = async () => {
-      try {
-        const ctrl = new AbortController();
-        const timeout = setTimeout(() => ctrl.abort(), 900);
-        // Suppress console noise for the expected offline daemon probe
-        const res = await fetch(`${daemonUrl.replace(/\/+$/, "")}/healthz`, {
-          signal: ctrl.signal,
-          mode: "no-cors",
-        }).catch(() => null);
-        clearTimeout(timeout);
-        // In no-cors mode, an opaque response means the server is reachable
-        if (!unmounted && res && (res.ok || res.type === "opaque")) {
-          // Re-fetch with CORS to read the body (only if above succeeded)
-          try {
-            const ctrl2 = new AbortController();
-            const timeout2 = setTimeout(() => ctrl2.abort(), 900);
-            const r2 = await fetch(`${daemonUrl.replace(/\/+$/, "")}/healthz`, { signal: ctrl2.signal });
-            clearTimeout(timeout2);
-            if (!unmounted && r2.ok) {
-              const data = await r2.json();
-              setAgentConnected(true);
-              setAgentAllowWrite(Boolean(data.allow_write));
-            }
-          } catch {
-            // Daemon unreachable with CORS — leave disconnected
-            if (!unmounted) setAgentConnected(false);
-          }
-        } else if (!unmounted) {
-          setAgentConnected(false);
-        }
-      } catch {
-        if (!unmounted) {
-          setAgentConnected(false);
-        }
-      }
-    };
-    checkDaemon();
-    return () => {
-      unmounted = true;
-    };
-  }, [daemonUrl]);
-
   // Trigger initial scan when preset or files change
   const executeScan = useCallback((filesToScan: Record<string, string>) => {
     setIsScanning(true);
@@ -478,6 +554,10 @@ export default function LiveFolder() {
       const result = runInBrowserScan(filesToScan);
       setFindings(result.findings);
       setScanElapsedMs(result.durationMs);
+      if (!baselineSetRef.current) {
+        baselineSetRef.current = true;
+        setBaselineFindingCount(result.findings.length);
+      }
       setIsScanning(false);
     }, 120);
   }, []);
@@ -486,15 +566,26 @@ export default function LiveFolder() {
     executeScan(workspaceFiles);
   }, [workspaceFiles, executeScan]);
 
+  const loadWorkspace = useCallback((files: Record<string, string>) => {
+    const result = runInBrowserScan(files);
+    setWorkspaceFiles(files);
+    setFindings(result.findings);
+    setScanElapsedMs(result.durationMs);
+    setBaselineFindingCount(result.findings.length);
+    baselineSetRef.current = true;
+    setSelectedFinding(null);
+    setDiffDrawerFinding(null);
+    setRemediationSummary(null);
+    setRemediationLogs([]);
+  }, []);
+
   const handleSelectPreset = (preset: "acme" | "gateway" | "node") => {
     setActivePreset(preset);
     let files: Record<string, string> = PRESET_ACME;
     if (preset === "gateway") files = PRESET_GATEWAY;
     if (preset === "node") files = PRESET_NODE;
-    setWorkspaceFiles(files);
+    loadWorkspace(files);
     setSelectedFile(Object.keys(files)[0]);
-    setRemediationSummary(null);
-    setRemediationLogs([]);
     push({
       title: "Preset Loaded",
       message: `Loaded ${preset.toUpperCase()} synthetic vulnerability test suite.`,
@@ -540,10 +631,8 @@ export default function LiveFolder() {
           return;
         }
 
-        setWorkspaceFiles(files);
+        loadWorkspace(files);
         setSelectedFile(Object.keys(files)[0]);
-        setRemediationSummary(null);
-        setRemediationLogs([]);
         setIsImportDrawerOpen(false);
         push({
           title: "Workspace Imported",
@@ -603,10 +692,8 @@ export default function LiveFolder() {
         setImportError("No supported source files found in uploaded batch. Citadel scans .py, .js, .ts, .json, .yaml files.");
         return;
       }
-      setWorkspaceFiles(newFiles);
+      loadWorkspace(newFiles);
       setSelectedFile(Object.keys(newFiles)[0]);
-      setRemediationSummary(null);
-      setRemediationLogs([]);
       setIsImportDrawerOpen(false);
       push({
         title: "Files Loaded",
@@ -663,37 +750,60 @@ export default function LiveFolder() {
     }
   };
 
-  // Apply single patch — debounced via ref to prevent duplicate application
+  // Apply one patch against the current content, verify it, and revert on failure.
   const applySinglePatch = useCallback((finding: LiveFinding) => {
-    if (!finding.patch) return;
-    // Prevent double-apply for the same finding ID
-    if (isPatchingRef.current.has(finding.id)) return;
+    if (!finding.patch || isScanning) return;
+    if (remediationRunningRef.current || isPatchingRef.current.has(finding.id)) return;
     isPatchingRef.current.add(finding.id);
+    setPatchingIds(new Set(isPatchingRef.current));
 
-    const targetFile = finding.file_path;
-    const updatedContent = finding.patch.patched_content;
+    const before = workspaceFiles;
+    const application = applyFindingPatch(before, finding);
+    if (!application.applied) {
+      push({
+        title: "Patch Not Applied",
+        message: application.reason ?? "The patch could not be applied safely.",
+        tone: "error",
+      });
+      executeScan(before);
+    } else {
+      const reScan = runInBrowserScan(application.files);
+      const stillOpen = reScan.findings.some((item) => item.id === finding.id);
+      if (stillOpen) {
+        // Verification failed: keep the original workspace, never report success.
+        setFindings(runInBrowserScan(before).findings);
+        push({
+          title: "Patch Reverted",
+          message: `${finding.cwe} is still detected after verification. The workspace was restored.`,
+          tone: "error",
+        });
+      } else {
+        setWorkspaceFiles(application.files);
+        setFindings(reScan.findings);
+        setScanElapsedMs(reScan.durationMs);
+        setRemediationSummary(null);
+        setRemediationLogs([]);
+        push({
+          title: "Patch Verified",
+          message: `Remediated ${finding.cwe} in ${finding.file_path}. ${reScan.findings.length} finding${reScan.findings.length === 1 ? "" : "s"} remain.`,
+          tone: "success",
+        });
+      }
+    }
 
-    const nextFiles = {
-      ...workspaceFiles,
-      [targetFile]: updatedContent,
-    };
-    setWorkspaceFiles(nextFiles);
     setDiffDrawerFinding(null);
+    setTimeout(() => {
+      isPatchingRef.current.delete(finding.id);
+      setPatchingIds(new Set(isPatchingRef.current));
+    }, 700);
+  }, [workspaceFiles, isScanning, executeScan, push]);
 
-    push({
-      title: "Patch Applied",
-      message: `Remediated ${finding.cwe} in ${finding.file_path}. Re-scanning…`,
-      tone: "success",
-    });
-
-    // Release after a short debounce window
-    setTimeout(() => isPatchingRef.current.delete(finding.id), 1500);
-  }, [workspaceFiles, push]);
-
-  // Run Closed-Loop Multi-Pass Remediation — guarded against concurrent runs
+  // Run the closed loop only while a real, verified candidate exists.
   const runClosedLoopRemediation = useCallback(async () => {
-    if (isRemediating || isScanning) return;
+    if (remediationRunningRef.current || isRemediating || isScanning) return;
+    remediationRunningRef.current = true;
     setIsRemediating(true);
+
     const initialCount = findings.length;
     let currentFiles = { ...workspaceFiles };
     let currentFindings = [...findings];
@@ -701,55 +811,97 @@ export default function LiveFolder() {
     let pass = 0;
     let patchesApplied = 0;
 
-    while (pass < 6) {
-      pass++;
-      const candidate = currentFindings.find((f) => f.safe_auto && f.patch);
-      if (!candidate || !candidate.patch) break;
+    try {
+      while (pass < 12) {
+        const candidate = currentFindings.find((f) => f.safe_auto && f.patch?.old_text);
+        if (!candidate?.patch) break;
+        pass++;
 
-      currentFiles = {
-        ...currentFiles,
-        [candidate.file_path]: candidate.patch.patched_content,
-      };
-      patchesApplied++;
+        const before = currentFiles;
+        const application = applyFindingPatch(currentFiles, candidate);
+        if (!application.applied) {
+          logs.push({
+            pass,
+            rule_id: candidate.rule_id,
+            file_path: candidate.file_path,
+            status: "error",
+            message: application.reason ?? "Patch could not be applied safely.",
+          });
+          break;
+        }
 
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const backupPath = `.cyberrange/backups/${timestamp}/${candidate.file_path}.bak`;
+        const reScan = runInBrowserScan(application.files);
+        const stillOpen = reScan.findings.some((item) => item.id === candidate.id);
+        if (stillOpen) {
+          currentFiles = before;
+          logs.push({
+            pass,
+            rule_id: candidate.rule_id,
+            file_path: candidate.file_path,
+            status: "reverted",
+            message: `Verification still detected ${candidate.cwe}; the patch was reverted.`,
+          });
+          break;
+        }
 
-      logs.push({
-        pass,
-        rule_id: candidate.rule_id,
-        file_path: candidate.file_path,
-        status: "applied",
-        message: `Applied safe patch for ${candidate.cwe}: ${candidate.patch.summary}`,
-        backup_path: backupPath,
+        currentFiles = application.files;
+        currentFindings = reScan.findings;
+        patchesApplied++;
+        logs.push({
+          pass,
+          rule_id: candidate.rule_id,
+          file_path: candidate.file_path,
+          status: "applied",
+          message: `Applied and verified safe patch for ${candidate.cwe}: ${candidate.patch.summary}`,
+        });
+      }
+
+      const finalScan = runInBrowserScan(currentFiles);
+      currentFindings = finalScan.findings;
+      setWorkspaceFiles(currentFiles);
+      setFindings(currentFindings);
+      setScanElapsedMs(finalScan.durationMs);
+      setRemediationLogs(logs);
+
+      const remainingCount = currentFindings.length;
+      const remainingAuto = currentFindings.filter(
+        (f) => f.safe_auto && f.patch?.old_text,
+      ).length;
+      const resolvedRate = initialCount > 0
+        ? Math.max(0, Math.min(100, Math.round(((initialCount - remainingCount) / initialCount) * 100)))
+        : 100;
+
+      setRemediationSummary({
+        passes: patchesApplied,
+        initialFindings: initialCount,
+        patchesApplied,
+        remainingFindings: remainingCount,
+        resolvedRate,
       });
 
-      const reScan = runInBrowserScan(currentFiles);
-      currentFindings = reScan.findings;
+      if (remainingCount === 0) {
+        push({
+          title: "Remediation Complete",
+          message: `All ${initialCount} finding${initialCount === 1 ? "" : "s"} resolved with ${patchesApplied} verified patch${patchesApplied === 1 ? "" : "es"}.`,
+          tone: "success",
+        });
+      } else if (remainingAuto > 0) {
+        push({
+          title: "Remediation Incomplete",
+          message: `${remainingCount} finding${remainingCount === 1 ? "" : "s"} remain, including ${remainingAuto} auto-fixable. Review the remaining fixes.`,
+          tone: "error",
+        });
+      } else {
+        push({
+          title: "Auto-Remediation Finished",
+          message: `${patchesApplied} patch${patchesApplied === 1 ? "" : "es"} verified. ${remainingCount} finding${remainingCount === 1 ? "" : "s"} require manual review.`,
+          tone: "info",
+        });
+      }
+    } finally {
+      remediationRunningRef.current = false;
+      setIsRemediating(false);
     }
-
-    setWorkspaceFiles(currentFiles);
-    setFindings(currentFindings);
-    setRemediationLogs(logs);
-
-    const remainingCount = currentFindings.length;
-    const resolvedRate = initialCount > 0 ? Math.round(((initialCount - remainingCount) / initialCount) * 100) : 100;
-
-    setRemediationSummary({
-      passes: pass,
-      initialFindings: initialCount,
-      patchesApplied,
-      remainingFindings: remainingCount,
-      resolvedRate,
-    });
-
-    setIsRemediating(false);
-
-    push({
-      title: "Remediation Complete",
-      message: `Closed-loop finished in ${pass} passes: ${patchesApplied} patches verified and deployed.`,
-      tone: "success",
-    });
   }, [isRemediating, isScanning, findings, workspaceFiles, push]);
 
   // Filtering
@@ -762,18 +914,22 @@ export default function LiveFolder() {
     });
   }, [findings, severityFilter, typeFilter]);
 
-  const autoFixableCount = useMemo(() => findings.filter((f) => f.safe_auto).length, [findings]);
+  const autoFixableCount = useMemo(
+    () => findings.filter((f) => f.safe_auto && f.patch?.old_text).length,
+    [findings],
+  );
   const initialEstimatedPosture = useMemo(() => {
-    if (findings.length === 0) return 100;
-    const maxWeight = findings.length * 25;
-    const penalty = findings.reduce((acc, f) => {
-      if (f.severity === "CRITICAL") return acc + 30;
-      if (f.severity === "HIGH") return acc + 20;
-      if (f.severity === "MEDIUM") return acc + 10;
-      return acc + 5;
-    }, 0);
-    return Math.max(0, Math.min(100, Math.round(100 - (penalty / maxWeight) * 100)));
-  }, [findings]);
+    if (baselineFindingCount === 0) return findings.length === 0 ? 100 : 0;
+    return Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(
+          ((baselineFindingCount - findings.length) / baselineFindingCount) * 100,
+        ),
+      ),
+    );
+  }, [baselineFindingCount, findings.length]);
 
   return (
     <div className="console-page">
@@ -797,7 +953,7 @@ export default function LiveFolder() {
               size="sm"
               icon="zap"
               disabled={isScanning || isRemediating || autoFixableCount === 0}
-              onClick={runClosedLoopRemediation}
+              onClick={() => void runClosedLoopRemediation()}
             >
               <span className="btn-label-desktop">
                 {isRemediating ? "Remediating…" : "Run Auto-Remediation Loop"}
@@ -960,7 +1116,8 @@ export default function LiveFolder() {
                 <div>
                   <span className="text-muted text-xs">Status</span>
                   <h4 style={{ margin: "2px 0 0", color: "var(--amber)", fontSize: 12 }}>
-                    {remediationSummary.remainingFindings} issue{remediationSummary.remainingFindings !== 1 ? "s" : ""} require manual review
+                    {remediationSummary.remainingFindings} issue{remediationSummary.remainingFindings !== 1 ? "s" : ""}{" "}
+                    {remediationSummary.remainingFindings === 1 ? "requires" : "require"} manual review
                   </h4>
                 </div>
               )}
@@ -971,15 +1128,17 @@ export default function LiveFolder() {
                 variant="quiet"
                 icon="download"
                 onClick={() => {
-                  const blob = new Blob([JSON.stringify(workspaceFiles, null, 2)], {
-                    type: "application/json",
+                  void exportLock.run(() => {
+                    const blob = new Blob([JSON.stringify(workspaceFiles, null, 2)], {
+                      type: "application/json",
+                    });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `remediated-workspace-${Date.now()}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
                   });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `remediated-workspace-${Date.now()}.json`;
-                  a.click();
-                  URL.revokeObjectURL(url);
                 }}
               >
                 Export Workspace
@@ -1147,11 +1306,12 @@ export default function LiveFolder() {
                           <Button
                             size="sm"
                             variant="primary"
+                            disabled={isRemediating || isScanning || patchingIds.has(finding.id)}
                             onClick={() => {
                               applySinglePatch(finding);
                             }}
                           >
-                            Apply Fix
+                            {patchingIds.has(finding.id) ? "Applying…" : "Apply Fix"}
                           </Button>
                         </div>
                       )}
@@ -1384,7 +1544,7 @@ export default function LiveFolder() {
                 >
                   <div className="row spread align-center">
                     <b>AcmeCorp Microservice (Python)</b>
-                    <Pill tone="live">3 FILES</Pill>
+                    <Pill tone="live">{Object.keys(PRESET_ACME).length} FILES</Pill>
                   </div>
                   <p className="text-xs text-muted" style={{ margin: "4px 0 0" }}>
                     CWE-89 (SQL Injection), CWE-862 (Missing Authorization), CWE-79 (Reflected XSS), CWE-489 (Active Debug Mode).
@@ -1406,7 +1566,7 @@ export default function LiveFolder() {
                 >
                   <div className="row spread align-center">
                     <b>Cloud Gateway (Python/YAML)</b>
-                    <Pill tone="medium">2 FILES</Pill>
+                    <Pill tone="medium">{Object.keys(PRESET_GATEWAY).length} FILES</Pill>
                   </div>
                   <p className="text-xs text-muted" style={{ margin: "4px 0 0" }}>
                     CWE-295 (TLS Verification Bypass), CWE-502 (Unsafe YAML Load), CWE-798 (Hardcoded API Secret).
@@ -1428,7 +1588,7 @@ export default function LiveFolder() {
                 >
                   <div className="row spread align-center">
                     <b>Express API (Node.js)</b>
-                    <Pill tone="neutral">1 FILE</Pill>
+                    <Pill tone="neutral">{Object.keys(PRESET_NODE).length} FILE</Pill>
                   </div>
                   <p className="text-xs text-muted" style={{ margin: "4px 0 0" }}>
                     CWE-78 (Shell Command Injection), CWE-295 (Insecure RejectUnauthorized TLS), CWE-95 (Eval Execution).
@@ -1462,9 +1622,10 @@ export default function LiveFolder() {
                   variant="primary"
                   size="sm"
                   icon="check"
+                  disabled={isRemediating || isScanning || patchingIds.has(diffDrawerFinding.id)}
                   onClick={() => applySinglePatch(diffDrawerFinding)}
                 >
-                  Apply Patch & Re-Scan
+                  {patchingIds.has(diffDrawerFinding.id) ? "Applying…" : "Apply Patch & Re-Scan"}
                 </Button>
               </div>
             </div>

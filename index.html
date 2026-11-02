@@ -18,24 +18,53 @@
     <title>Citadel — Defensive Cyber Range</title>
   </head>
   <body>
-    <div id="root">
-      <!-- Shown only if JavaScript fails to load -->
-      <noscript style="display:flex;min-height:100svh;align-items:center;justify-content:center;background:#070305;color:#f7f2e8;font-family:system-ui,sans-serif;text-align:center;padding:24px;flex-direction:column;gap:12px;">
+    <div id="root"></div>
+    <noscript>
+      <div
+        style="position:fixed;inset:0;z-index:9999;display:flex;min-height:100svh;align-items:center;justify-content:center;background:#070305;color:#f7f2e8;font-family:system-ui,sans-serif;text-align:center;padding:24px;flex-direction:column;gap:12px;"
+      >
         <strong style="font-size:1.25rem;">Citadel requires JavaScript</strong>
-        <span style="color:#9baa97;font-size:0.9rem;">Please enable JavaScript in your browser to use the Defensive Cyber Range Platform.</span>
-      </noscript>
-    </div>
+        <span style="color:#9baa97;font-size:0.9rem;">
+          Please enable JavaScript in your browser to use the Defensive Cyber
+          Range Platform.
+        </span>
+      </div>
+    </noscript>
+    <script>
+      window.__citadelBooted = false;
+    </script>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // JS bundle load failure fallback
-      window.addEventListener('error', function(e) {
-        if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
-          var root = document.getElementById('root');
-          if (root && !root.hasChildNodes()) {
-            root.innerHTML = '<div style="display:flex;min-height:100svh;align-items:center;justify-content:center;background:#070305;color:#f7f2e8;font-family:system-ui,sans-serif;text-align:center;padding:24px;flex-direction:column;gap:12px;"><strong style=\'font-size:1.25rem;\'>Failed to load Citadel</strong><span style=\'color:#9baa97;font-size:0.9rem;\'>The application bundle could not be loaded. Please check your network connection and refresh the page.</span><button onclick="location.reload()" style=\'margin-top:16px;padding:10px 20px;background:#781c38;color:#f7f2e8;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;\'>Retry</button></div>';
-          }
+      (function () {
+        function showFallback() {
+          if (window.__citadelBooted) return;
+          var root = document.getElementById("root");
+          if (!root || root.getAttribute("data-fallback") === "shown") return;
+          root.setAttribute("data-fallback", "shown");
+          root.innerHTML =
+            '<div style="display:flex;min-height:100svh;align-items:center;justify-content:center;background:#070305;color:#f7f2e8;font-family:system-ui,sans-serif;text-align:center;padding:24px;flex-direction:column;gap:12px;">' +
+            '<strong style="font-size:1.25rem;">Failed to load Citadel</strong>' +
+            '<span style="color:#9baa97;font-size:0.9rem;">The application bundle could not be loaded. Please check your network connection and refresh the page.</span>' +
+            '<button onclick="location.reload()" style="margin-top:16px;padding:10px 20px;background:#781c38;color:#f7f2e8;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;">Retry</button>' +
+            "</div>";
         }
-      }, true);
+
+        window.addEventListener(
+          "error",
+          function (event) {
+            if (
+              event.target &&
+              (event.target.tagName === "SCRIPT" ||
+                event.target.tagName === "LINK")
+            ) {
+              showFallback();
+            }
+          },
+          true
+        );
+
+        window.setTimeout(showFallback, 12000);
+      })();
     </script>
   </body>
 </html>

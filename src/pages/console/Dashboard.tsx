@@ -11,7 +11,8 @@ import {
 import { Gauge, LineChart, SeverityBar } from "../../components/ui/viz";
 import { Icon } from "../../components/ui/Icon";
 import { useToast } from "../../components/ui/overlays";
-import { useDocumentTitle } from "../../lib/hooks";
+import { useActionLock, useDocumentTitle } from "../../lib/hooks";
+import { CWE_ORDER } from "../../lib/simulation/project";
 import {
   latestRound,
   pendingApprovals,
@@ -79,6 +80,7 @@ function statusFor(
 export default function Dashboard() {
   useDocumentTitle("Mission control — Citadel");
   const navigate = useNavigate();
+  const exportLock = useActionLock();
   const { state } = useRange();
   const { push } = useToast();
   const round = latestRound(state);
@@ -89,7 +91,7 @@ export default function Dashboard() {
   const audit = verifyAuditChain(state.audit);
   const posture = round
     ? round.scorecard.securityPostureScore
-    : (state.remediatedCwes.length / 4) * 100;
+    : (state.remediatedCwes.length / CWE_ORDER.length) * 100;
   const deployed = state.rounds.reduce(
     (total, item) =>
       total + item.deployments.filter((deployment) => deployment.deployed).length,
@@ -164,7 +166,7 @@ export default function Dashboard() {
               variant="ghost"
               size="sm"
               icon="download"
-              onClick={downloadReport}
+              onClick={() => void exportLock.run(downloadReport)}
             >
               Export report
             </Button>
@@ -304,7 +306,7 @@ export default function Dashboard() {
           <div className="posture-card__foot">
             <span>
               <Icon name="shield-check" size={11} />
-              {state.remediatedCwes.length} of 4 classes remediated
+              {state.remediatedCwes.length} of {CWE_ORDER.length} classes remediated
             </span>
             <span>{state.audit.length} sealed actions</span>
           </div>

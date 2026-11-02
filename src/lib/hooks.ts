@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useReveal<T extends HTMLElement>(delay = 0) {
   const ref = useRef<T | null>(null);
@@ -64,4 +64,34 @@ export function useScrolled(threshold = 24) {
     return () => window.removeEventListener("scroll", handler);
   }, [threshold]);
   return scrolled;
+}
+
+/**
+ * Prevents accidental duplicate execution of a critical action. The lock is
+ * acquired synchronously, so a rapid double click cannot run the action twice.
+ */
+export function useActionLock(cooldown = 700) {
+  const locked = useRef(false);
+  const [busy, setBusy] = useState(false);
+
+  const release = useCallback(() => {
+    locked.current = false;
+    setBusy(false);
+  }, []);
+
+  const run = useCallback(
+    async <T,>(action: () => T | Promise<T>): Promise<T | undefined> => {
+      if (locked.current) return undefined;
+      locked.current = true;
+      setBusy(true);
+      try {
+        return await action();
+      } finally {
+        window.setTimeout(release, cooldown);
+      }
+    },
+    [cooldown, release],
+  );
+
+  return { busy, run };
 }
