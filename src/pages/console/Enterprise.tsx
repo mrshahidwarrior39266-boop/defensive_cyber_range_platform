@@ -298,8 +298,13 @@ export default function Enterprise() {
           title="Attack surface"
           subtitle="Functions mapped by the AST surface scan"
           actions={
-            <Pill tone="critical" icon="alert">
-              0 authorization guards
+            <Pill
+              tone={state.remediatedCwes.includes("CWE-862") ? "live" : "critical"}
+              icon={state.remediatedCwes.includes("CWE-862") ? "shield-check" : "alert"}
+            >
+              {state.remediatedCwes.includes("CWE-862")
+                ? "1 authorization guard active"
+                : "0 authorization guards"}
             </Pill>
           }
         >
@@ -314,27 +319,34 @@ export default function Enterprise() {
                 </tr>
               </thead>
               <tbody>
-                {SURFACES.map((surface) => (
-                  <tr key={`${surface.endpoint}-${surface.functionName}`}>
-                    <td className="cell-mono strong">{surface.endpoint}</td>
-                    <td className="cell-mono">{surface.functionName}</td>
-                    <td className="cell-mono muted">
-                      {surface.parameters.length
-                        ? surface.parameters.join(", ")
-                        : "—"}
-                    </td>
-                    <td>
-                      <span
-                        className={cn(
-                          "state-chip",
-                          surface.hasAuthGuard ? "is-fixed" : "is-blocked",
-                        )}
-                      >
-                        {surface.hasAuthGuard ? "guarded" : "missing"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {SURFACES.map((surface) => {
+                  // After CWE-862 remediation, delete_user_record gains its auth guard
+                  const authRemediated =
+                    state.remediatedCwes.includes("CWE-862") &&
+                    surface.functionName === "delete_user_record";
+                  const isGuarded = surface.hasAuthGuard || authRemediated;
+                  return (
+                    <tr key={`${surface.endpoint}-${surface.functionName}`}>
+                      <td className="cell-mono strong">{surface.endpoint}</td>
+                      <td className="cell-mono">{surface.functionName}</td>
+                      <td className="cell-mono muted">
+                        {surface.parameters.length
+                          ? surface.parameters.join(", ")
+                          : "—"}
+                      </td>
+                      <td>
+                        <span
+                          className={cn(
+                            "state-chip",
+                            isGuarded ? "is-fixed" : "is-blocked",
+                          )}
+                        >
+                          {isGuarded ? "guarded" : "missing"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

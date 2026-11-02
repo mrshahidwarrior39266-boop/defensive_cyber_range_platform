@@ -3546,6 +3546,10 @@
   display: none;
 }
 
+.btn-label-desktop {
+  display: inline;
+}
+
 .workspace-tabs-row {
   display: flex;
   align-items: center;
@@ -3762,16 +3766,22 @@
   }
 }
 
-@media (max-width: 640px) {
-  .live-head-actions {
-    width: 100%;
-    justify-content: flex-start;
-  }
+@media (max-width: 540px) {
   .btn-label-desktop {
     display: none;
   }
   .btn-label-mobile {
     display: inline;
+  }
+  .live-head-actions {
+    gap: 6px;
+  }
+}
+
+@media (max-width: 640px) {
+  .live-head-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
   .workspace-tabs-row {
     flex-direction: column;

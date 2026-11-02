@@ -771,6 +771,39 @@
   .console__foot {
     justify-content: flex-start;
   }
+  /* Mobile: Ensure hamburger menu button is always tappable above status pills */
+  .topbar__menu {
+    position: relative;
+    z-index: 60;
+    pointer-events: auto;
+    flex-shrink: 0;
+  }
+  .topbar__left {
+    position: relative;
+    z-index: 60;
+    pointer-events: auto;
+    flex-shrink: 0;
+  }
+  .topbar__right {
+    position: relative;
+    z-index: 50;
+    overflow: hidden;
+    max-width: calc(100% - 120px);
+  }
+  .topbar__posture {
+    display: none;
+  }
+  /* Prevent Kill switch popup from going off-screen */
+  .kill-control {
+    position: static;
+  }
+  .kill-pop {
+    position: fixed;
+    top: 68px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
 }
 
 /* Mode-Aware Workspace Card & Topbar Additions */

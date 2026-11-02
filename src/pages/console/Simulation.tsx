@@ -124,6 +124,7 @@ export default function Simulation() {
   const phase = configModified ? -1 : (PHASE_INDEX[state.phase] ?? -1);
 
   const launch = async () => {
+    if (running) return; // Guard against double-click
     if (state.killSwitch.tripped) {
       push({
         title: "Kill switch is active",

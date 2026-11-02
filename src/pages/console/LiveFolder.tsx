@@ -407,6 +407,7 @@ export default function LiveFolder() {
 
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [isRemediating, setIsRemediating] = useState<boolean>(false);
+  const isPatchingRef = useRef<Set<string>>(new Set());
 
   const [findings, setFindings] = useState<LiveFinding[]>([]);
   const [scanElapsedMs, setScanElapsedMs] = useState<number>(0);
@@ -432,12 +433,31 @@ export default function LiveFolder() {
       try {
         const ctrl = new AbortController();
         const timeout = setTimeout(() => ctrl.abort(), 900);
-        const res = await fetch(`${daemonUrl.replace(/\/+$/, "")}/healthz`, { signal: ctrl.signal });
+        // Suppress console noise for the expected offline daemon probe
+        const res = await fetch(`${daemonUrl.replace(/\/+$/, "")}/healthz`, {
+          signal: ctrl.signal,
+          mode: "no-cors",
+        }).catch(() => null);
         clearTimeout(timeout);
-        if (!unmounted && res.ok) {
-          const data = await res.json();
-          setAgentConnected(true);
-          setAgentAllowWrite(Boolean(data.allow_write));
+        // In no-cors mode, an opaque response means the server is reachable
+        if (!unmounted && res && (res.ok || res.type === "opaque")) {
+          // Re-fetch with CORS to read the body (only if above succeeded)
+          try {
+            const ctrl2 = new AbortController();
+            const timeout2 = setTimeout(() => ctrl2.abort(), 900);
+            const r2 = await fetch(`${daemonUrl.replace(/\/+$/, "")}/healthz`, { signal: ctrl2.signal });
+            clearTimeout(timeout2);
+            if (!unmounted && r2.ok) {
+              const data = await r2.json();
+              setAgentConnected(true);
+              setAgentAllowWrite(Boolean(data.allow_write));
+            }
+          } catch {
+            // Daemon unreachable with CORS — leave disconnected
+            if (!unmounted) setAgentConnected(false);
+          }
+        } else if (!unmounted) {
+          setAgentConnected(false);
         }
       } catch {
         if (!unmounted) {
@@ -643,9 +663,13 @@ export default function LiveFolder() {
     }
   };
 
-  // Apply single patch
-  const applySinglePatch = (finding: LiveFinding) => {
+  // Apply single patch — debounced via ref to prevent duplicate application
+  const applySinglePatch = useCallback((finding: LiveFinding) => {
     if (!finding.patch) return;
+    // Prevent double-apply for the same finding ID
+    if (isPatchingRef.current.has(finding.id)) return;
+    isPatchingRef.current.add(finding.id);
+
     const targetFile = finding.file_path;
     const updatedContent = finding.patch.patched_content;
 
@@ -661,10 +685,14 @@ export default function LiveFolder() {
       message: `Remediated ${finding.cwe} in ${finding.file_path}. Re-scanning…`,
       tone: "success",
     });
-  };
 
-  // Run Closed-Loop Multi-Pass Remediation
-  const runClosedLoopRemediation = async () => {
+    // Release after a short debounce window
+    setTimeout(() => isPatchingRef.current.delete(finding.id), 1500);
+  }, [workspaceFiles, push]);
+
+  // Run Closed-Loop Multi-Pass Remediation — guarded against concurrent runs
+  const runClosedLoopRemediation = useCallback(async () => {
+    if (isRemediating || isScanning) return;
     setIsRemediating(true);
     const initialCount = findings.length;
     let currentFiles = { ...workspaceFiles };
@@ -722,7 +750,7 @@ export default function LiveFolder() {
       message: `Closed-loop finished in ${pass} passes: ${patchesApplied} patches verified and deployed.`,
       tone: "success",
     });
-  };
+  }, [isRemediating, isScanning, findings, workspaceFiles, push]);
 
   // Filtering
   const filteredFindings = useMemo(() => {
@@ -928,6 +956,14 @@ export default function LiveFolder() {
                 <span className="text-muted text-xs">Remaining Issues</span>
                 <h4 style={{ margin: "2px 0 0" }}>{remediationSummary.remainingFindings}</h4>
               </div>
+              {remediationSummary.remainingFindings > 0 && (
+                <div>
+                  <span className="text-muted text-xs">Status</span>
+                  <h4 style={{ margin: "2px 0 0", color: "var(--amber)", fontSize: 12 }}>
+                    {remediationSummary.remainingFindings} issue{remediationSummary.remainingFindings !== 1 ? "s" : ""} require manual review
+                  </h4>
+                </div>
+              )}
             </div>
             <div className="row gap-8">
               <Button
